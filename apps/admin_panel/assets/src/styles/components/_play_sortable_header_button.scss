@@ -1,0 +1,7 @@
+.play-header-button {
+  user-select: none;
+  &:hover {
+    color: $omise-dark-blue;
+    cursor: pointer;
+  }
+}

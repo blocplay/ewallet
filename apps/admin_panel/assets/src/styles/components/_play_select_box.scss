@@ -1,0 +1,13 @@
+.play-select-box {
+  &__input {
+    @extend .play-form__input;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    background: url('../../public/images/chevron_down.svg') white
+      no-repeat calc(100% - 10px)/1rem;
+  }
+
+  &__input:focus {
+    @extend .play-form__input:focus
+  }
+}
