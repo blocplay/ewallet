@@ -15,10 +15,10 @@ __Use at your own risk.__
 # TokenPlay Architecture
 ![TokenPlay Architecture](http://app.blocplays.com/tokenplay_arch.png)
 
--The TokenPlay architecture consists of the following backends:
-  -eWallet Backend
-  -Gamer Backend
-  -Developer Backend
+The TokenPlay architecture consists of the following backends:
+- eWallet Backend
+- Gamer Backend
+- Developer Backend
 
 This repository contains the code for our existing eWallet Backend which is used to authenicate all of our services against. This development strategy supports developing an architecture is hot swappable, fail safe, and potentially scalable.
 
@@ -26,12 +26,23 @@ During development we will be committing code against our eWallet which will lik
 
 # TL;DR
 
+Release: This is the latest public release of our codebase.
+
+Staging: This is the most up to date build of our codebase.
+
+(http://ewallet.tokenplay.com/) [Release]
+
+(http://mac.tokenplay.com/) [Staging]
+
+Sample Frontend: Coming soon developed in ElectronJS!
+
 # Setup on macosx High Sierra
 
-#####
 We use the Laptop script (see: https://www.moncefbelyamani.com/how-to-install-xcode-homebrew-git-rvm-ruby-on-mac/ ) to setup our dev environment from scratch:
 
+```
 bash <(curl -s https://raw.githubusercontent.com/monfresh/laptop/master/laptop)
+```
 
 Bundler for managing Ruby gems
 chruby for managing Ruby versions
@@ -48,19 +59,21 @@ ruby-install for installing different versions of Ruby
 Sublime Text 3 for coding all the things
 Zsh as your shell (if you opt in)
 
-#####
+
+## Install depends
 Once the Laptop script is done we need to install or build specifics:
 
-PostgreSQL: PostgreSQL is used to store most of the data for the eWallet API and local ledger.
+- [PostgreSQL](https://www.postgresql.org/): PostgreSQL is used to store most of the data for the eWallet API and local ledger.
 
-ImageMagick: ImageMagick is used to format images in the admin panel. Tested with version > 7.0.7-22.
+- [ImageMagick](https://www.imagemagick.org/script/index.php): ImageMagick is used to format images in the admin panel. Tested with version > 7.0.7-22.
 
-Libsodium: Sodium is a new, easy-to-use software library for encryption, decryption, signatures, password hashing and more. It is used to hash and encrypt/decrypt sensitive data.
+- [Libsodium](https://github.com/jedisct1/libsodium): Sodium is a new, easy-to-use software library for encryption, decryption, signatures, password hashing and more. It is used to hash and encrypt/decrypt sensitive data.
 
-Elixir: Elixir is a dynamic, functional language designed for building scalable and maintainable applications.
+- [Elixir](http://elixir-lang.github.io/install.html): Elixir is a dynamic, functional language designed for building scalable and maintainable applications.
 
-Git: Git is a free and open source distributed version control system designed to handle everything from small to very large projects with speed and efficiency.
+- [Git](https://git-scm.com/): Git is a free and open source distributed version control system designed to handle everything from small to very large projects with speed and efficiency.
 
+```
 brew update
 brew install imagemagick
 brew install elixir
@@ -71,10 +84,11 @@ brew install postgres
 brew install autogen
 brew install rebar
 brew install rebar3
+```
 
-#####
-Compile Libsodium & nacl
+## Compile Libsodium & nacl
 
+```
 cd ~/
 mkdir Source
 cd ~/Source
@@ -84,100 +98,126 @@ cd libsodium
 ./configure
 make && make check
 sudo make install
+```
 
+```
 cd ~/Source
 git clone https://github.com/jlouis/enacl
 cd enacl
 rebar make
 make eqc_run
+```
 
-#####
-Setup postgres
+## Setup postgres
 
+```
 nano /usr/local/var/postgres/pg_hba.conf
 Enable your access:
 host all all 127.0.0.1/32 md5
 brew services restart postgresql
 psql -d postgres
+```
 
 From psql console:
+```
 CREATE USER postgres SUPERUSER;
 CREATE DATABASE postgres WITH OWNER postgres;
 \password
 \q
+```
 
-#####
-Setup apache
+## Setup apache
+```
 sudo apachectl stop
 sudo launchctl unload -w /System/Library/LaunchDaemons/org.apache.httpd.plist
 brew install httpd
+```
 
-#####
-Download the svn
+## Clone source
 
+```
 cd ~/
 mkdir Source
 cd Source
+```
 
+```
 git clone https://github.com/blocplay/ewallet.git ewallet
 cd ewallet
+```
 
-#####
-Setup ewallet depends
+## Setup ewallet depends
+```
 mix deps.get
+```
 
+```
 cd ~/Source/ewallet
 cd apps/admin_panel/assets/ && yarn install
+```
 
+## Setup ewallet config
 
-#####
-Setup ewallet config
-
+```
 nano ~/Source/ewallet/apps/ewallet_db/config/dev.exs
 base_url: "http://xxx.tokenplay.com"
+```
 
 You can change the db credentials as well if you like.
 
-#####
-Create && || Migrate DB
+## Create && || Migrate DB
 
+```
 cd ~/Source/ewallet
 mix do ecto.create, ecto.migrate
+```
 
-#####
-Seed DB
+## Seed DB
+```
 mix seed
+```
 
-#####
-Seed DB with Sample Data
+## Seed DB with Sample Data
+```
 mix seed --sample
+```
 
-#####
-Start the Backend!
+## Start the Backend!
 
+```
 mix play.server
+```
 
 Port 4000 is the port the standard elixir backend runs on.
 
 We will create a reverse proxy using Apache2.
 
 
-#####
-Configure Apache2
+## Configure Apache2
 
 We are using the built in version of apache on macosx. Any option is possible.
 
+```
 cd /usr/local/etc/apache2
+```
 
+```
 sudo nano /usr/local/etc/apache2/httpd.conf
+```
 
 Enable proxy module
 
 Uncomment:
+
+```
 Include /usr/local/etc/httpd/extra/httpd-vhosts.conf
+```
 
+```
 sudo nano /etc/apache2/extra/httpd-vhosts.conf
+```
 
+```
 <VirtualHost *:80>
         ServerName xxx.tokenplay.com
 
@@ -188,13 +228,19 @@ sudo nano /etc/apache2/extra/httpd-vhosts.conf
         ProxyPassReverse / http://127.0.0.1:4000/
 
 </VirtualHost>
+```
 
-# Extras for osx
+## Extras for osx
 
+```
 open port 80
 sudo nano /etc/pf.conf
+```
 
 add:
 pass in proto tcp from any to any port 80
+
+```
 sudo reboot
 sudo brew services start httpd
+```
