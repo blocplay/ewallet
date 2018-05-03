@@ -13,7 +13,7 @@ TokenPlay and all of its systems are under heavy active development and we stron
 __Use at your own risk.__
 
 # Online Demo
-![eWallet Demo](http://ewallet.tokenplay.com/)
+[eWallet Demo](http://ewallet.tokenplay.com/)
 
 # TokenPlay Architecture
 ![TokenPlay Architecture](http://app.blocplays.com/tokenplay_arch.png)
