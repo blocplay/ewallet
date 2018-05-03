@@ -1,0 +1,2261 @@
+openapi: 3.0.0
+info:
+  version: "1.0.0"
+  title: PLAY BACKEND Admin API
+  description: >
+    This is the documentation for PLAY BACKEND Admin API.
+
+
+    All calls must be user-authenticated. That is, the client must first
+    authenticate with the API using the user's email and password.
+    On successful authentication, the API returns an authentication token
+    (i.e. `authentication_token`).
+
+
+    Once a valid `authentication_token` is received, use the given auth token
+    to make subsequent calls to the API via HTTP header:
+
+
+    ```
+    Authorization=PLAYAdmin Base64(api_key_id:api_key:user_id:authentication_token)
+    ```
+
+
+    Due to HTTP-RPC nature, the API will always return a `200` HTTP status,
+    including on errors. Only in case of an internal server error that `500`
+    will be returned.
+  contact:
+    name: Vince McMullin, CTO
+    email: vincem@tokenplay.com
+
+tags:
+  - name: Session
+    description: Resources related to session tokens.
+  - name: Minted Token
+    description: Resources related to minted tokens.
+  - name: Account
+    description: Resources related to account.
+  - name: User
+    description: Resources related to users.
+  - name: Admin
+    description: Resources related to admins.
+  - name: Transaction
+    description: Resources related to transactions.
+  - name: API Access
+    description: Resources related to API access.
+
+servers:
+  - url: /admin/api
+
+paths:
+  ######################################
+  #          SESSION ENDPOINTS         #
+  ######################################
+  /login:
+    post:
+      tags:
+        - Session
+      summary: Login an existing user using email and password.
+      operationId: login
+      security:
+        - ClientAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/LoginBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/AuthenticationTokenResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /logout:
+    post:
+      tags:
+        - Session
+      summary: Expires a user's authentication_token.
+      operationId: logout
+      security:
+        - UserAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/EmptyResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+  /password.reset:
+    post:
+      tags:
+        - Session
+      summary: Sends an email containing a link to reset the password.
+      operationId: password_reset
+      security:
+        - ClientAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/ResetPasswordBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/EmptyResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+  /password.update:
+    post:
+      tags:
+        - Session
+      summary: Reset the password for a specific token with the provided new password.
+      operationId: password_update
+      security:
+        - ClientAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/UpdatePasswordBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/EmptyResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+  #####################################
+  #       MINTED TOKEN ENDPOINTS      #
+  #####################################
+  /minted_token.all:
+    post:
+      tags:
+        - Minted Token
+      summary: Get the list of minted tokens
+      operationId: token_all
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/MintedTokenAllBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/MintedTokensResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /minted_token.get:
+    post:
+      tags:
+        - Minted Token
+      summary: Get a specific minted token
+      operationId: token_get
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/MintedTokenGetBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/MintedTokenResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  # Endpoint to create a new minted token
+  /minted_token.create:
+    post:
+      tags:
+        - Minted Token
+      summary: Create a new minted token
+      operationId: minted_token_create
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/MintedTokenCreateBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/MintedTokenResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  ############################
+  #         ACCOUNTS         #
+  ############################
+  # Endpoint to get info about the accounts
+  /account.all:
+    post:
+      tags:
+        - Account
+      summary: Get the list of accounts
+      operationId: account_all
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AccountAllBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/AccountsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /account.get:
+    post:
+      tags:
+        - Account
+      summary: Get a specific account
+      operationId: account_get
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AccountGetBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/AccountResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /account.create:
+    post:
+      tags:
+        - Account
+      summary: Create a new account
+      operationId: account_create
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AccountCreateBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/AccountResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /account.update:
+    post:
+      tags:
+        - Account
+      summary: Update an account
+      operationId: account_update
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AccountUpdateBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/AccountResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /account.upload_avatar:
+    post:
+      tags:
+        - Account
+      summary: Uploads avatar for an account
+      operationId: account_upload_avatar
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AccountUploadBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/AccountResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /account.list_users:
+    post:
+      tags:
+        - Account
+      summary: List the users that are currently assigned to the given acount
+      operationId: account_list_users
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AccountListUsersBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/UsersResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /account.assign_user:
+    post:
+      tags:
+        - Account
+      summary: Assigns a user to an account with a role
+      operationId: account_assign_user
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AccountAssignUserBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/EmptyResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /account.unassign_user:
+    post:
+      tags:
+        - Account
+      summary: Unassigns a user from an account
+      operationId: account_unassign_user
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AccountUnassignUserBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/EmptyResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+  #####################################
+  #           USER ENDPOINTS          #
+  #####################################
+  /user.all:
+    post:
+      tags:
+        - User
+      summary: Get the list of users
+      operationId: user_all
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/UserAllBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/UsersResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /user.get:
+    post:
+      tags:
+        - User
+      summary: Get a specific user
+      operationId: user_get
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/UserGetBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/UserResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /me.get:
+    post:
+      tags:
+        - User
+      summary: Get the user corresponding to the provided authentication header.
+      operationId: me_get
+      security:
+        - UserAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/UserResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /me.get_account:
+    post:
+      tags:
+        - User
+      summary: Get one upper-most account that the user has membership in.
+      operationId: me_get_account
+      security:
+        - UserAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/AccountResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /me.get_accounts:
+    post:
+      tags:
+        - User
+      summary: Get the list of account and sub-accounts that the user has membership in.
+      operationId: me_get_accounts
+      security:
+        - UserAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/AccountsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /invite.accept:
+    post:
+      tags:
+        - User
+      summary: Accepts an invite
+      operationId: invite_accept
+      security:
+        - UserAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/UserResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+  ##########################################
+  #          ADMIN USER ENDPOINTS          #
+  ##########################################
+  /admin.all:
+    post:
+      tags:
+        - Admin
+      summary: Get the list of admins
+      operationId: admin_all
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AdminAllBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/AdminsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /admin.get:
+    post:
+      tags:
+        - Admin
+      summary: Get a specific admin
+      operationId: admin_get
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AdminGetBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/AdminResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /admin.upload_avatar:
+    post:
+      tags:
+        - Admin
+      summary: Uploads avatar for an admin
+      operationId: admin_upload_avatar
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AdminUploadBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/AdminResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+  #####################################
+  #       TRANSACTION ENDPOINTS       #
+  #####################################
+  /transaction.all:
+    post:
+      tags:
+        - Transaction
+      summary: Get the list of transactions
+      operationId: transaction_all
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/TransactionAllBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/TransactionsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /transaction.get:
+    post:
+      tags:
+        - Transaction
+      summary: Get the a specific transaction by its id
+      operationId: transaction_get
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/TransactionGetBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/TransactionResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+  ######################################
+  #        API ACCESS ENDPOINTS        #
+  ######################################
+  /access_key.all:
+    post:
+      tags:
+        - API Access
+      summary: Get the list of access and secret keys
+      operationId: access_key_all
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AccessKeyAllBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/AccessKeysResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /access_key.create:
+    post:
+      tags:
+        - API Access
+      summary: Create a pair of access and secret keys
+      operationId: access_key_create
+      security:
+        - UserAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/AccessKeyResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /access_key.delete:
+    post:
+      tags:
+        - API Access
+      summary: Delete a pair of access and secret keys by its id or access key
+      operationId: access_key_delete
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AccessKeyDeleteBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/EmptyResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /api_key.all:
+    post:
+      tags:
+        - API Access
+      summary: Get the list of API keys
+      operationId: api_key_all
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/APIKeyAllBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/APIKeysResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /api_key.create:
+    post:
+      tags:
+        - API Access
+      summary: Create an API key
+      operationId: api_key_create
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/APIKeyCreateBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/APIKeyResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /api_key.delete:
+    post:
+      tags:
+        - API Access
+      summary: Delete an API key by its id
+      operationId: api_key_delete
+      security:
+        - UserAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/APIKeyDeleteBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/EmptyResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+# Components are objects that are reusable within this API spec.
+# They do not have any effect on the API unless they are
+# referenced from properties outside the component.
+components:
+  schemas:
+    ######################################
+    #             BASE SCHEMAS           #
+    ######################################
+    BaseResponseSchema:
+      description: "The response schema for a successful operation"
+      type: object
+      properties:
+        version:
+          type: string
+        success:
+          type: boolean
+        data:
+          type: object
+      required:
+        - version
+        - success
+        - data
+      example:
+        version: "1"
+        success: true
+        data: {}
+    UnpaginatedListSchema:
+      description: "The object schema for an unpaginated list"
+      type: object
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+      required:
+        - object
+        - data
+      example:
+        object: list
+        data: []
+    PaginatedListSchema:
+      description: "The object schema for a paginated list"
+      type: object
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+        pagination:
+          type: object
+          properties:
+            per_page:
+              type: integer
+              minimum: 1
+            current_page:
+              type: integer
+              minimum: 1
+            is_first_page:
+              type: boolean
+            is_last_page:
+              type: boolean
+          required:
+            - per_page
+            - current_page
+            - is_first_page
+            - is_last_page
+      required:
+        - object
+        - data
+        - pagination
+      example:
+        object: list
+        data: []
+        pagination:
+          per_page: 10
+          current_page: 1
+          is_first_page: true
+          is_last_page: true
+
+    ######################################
+    #            ERROR SCHEMAS           #
+    ######################################
+    ErrorSchema:
+      description: "The object schema for an error"
+      type: object
+      properties:
+        object:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        messages:
+          type: object
+      required:
+        - object
+        - code
+        - description
+        - messages
+      example:
+        object: "error"
+        code: "server:internal_server_error"
+        description: "Something went wrong on the server"
+        messages: {"error_key": "error_reason"}
+    ErrorResponseSchema:
+      description: "The response schema for an error"
+      allOf:
+        - $ref: '#/components/schemas/BaseResponseSchema'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ErrorSchema'
+          required:
+            - data
+          example:
+            success: false
+            data:
+              object: "error"
+              code: "server:internal_server_error"
+              description: "Something went wrong on the server"
+              messages: {"error_key":"error_reason"}
+
+    ######################################
+    #          AUTH TOKEN SCHEMAS        #
+    ######################################
+    AuthenticationTokenSchema:
+      description: "The object schema for an authentication token"
+      type: object
+      properties:
+        object:
+          type: string
+        authentication_token:
+          type: string
+        user_id:
+          type: string
+          format: uuid
+      required:
+        - object
+        - authentication_token
+        - user_id
+    AuthenticationTokenResponseSchema:
+      description: "The response schema for an authentication token"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            $ref: '#/components/schemas/AuthenticationTokenSchema'
+        required:
+          - data
+        example:
+          data:
+            object: "authentication_token"
+            authentication_token: "azJRj09l7jvR8KhTqUs3"
+            user_id: "12345678-1234-1234-1234-123456789012"
+
+    ######################################
+    #         MINTED TOKEN SCHEMAS       #
+    ######################################
+    MintedTokenSchema:
+      description: "The object schema for a minted token"
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+        symbol:
+          type: string
+        name:
+          type: string
+        subunit_to_unit:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+        encrypted_metadata:
+          type: object
+      required:
+        - object
+        - id
+        - symbol
+        - name
+        - subunit_to_unit
+        - created_at
+        - updated_at
+    MintedTokenResponseSchema:
+      description: "The response schema for a minted token"
+      allOf:
+        - $ref: '#/components/schemas/BaseResponseSchema'
+        - type: object
+          properties:
+            data:
+              type: object
+              $ref: '#/components/schemas/MintedTokenSchema'
+          required:
+            - data
+          example:
+            version: "1"
+            success: true
+            data:
+              object: "minted_token"
+              id: "ABC:ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+              symbol: "ABC"
+              name: "ABC Point"
+              subunit_to_unit: 100
+              created_at: "2018-01-01T00:00:00Z"
+              updated_at: "2018-01-01T10:00:00Z"
+    MintedTokensResponseSchema:
+      description: "The response schema for a list of minted tokens"
+      allOf:
+        - $ref: '#/components/schemas/BaseResponseSchema'
+        - type: object
+          properties:
+            data:
+              type: object
+              allOf:
+                - $ref: '#/components/schemas/PaginatedListSchema'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/MintedTokenSchema'
+          required:
+            - data
+          example:
+            version: "1"
+            success: true
+            data:
+              object: "list"
+              data:
+                - object: "minted_token"
+                  id: "ABC:ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                  symbol: "ABC"
+                  name: "ABC Point"
+                  subunit_to_unit: 100
+                  created_at: "2018-01-01T00:00:00Z"
+                  updated_at: "2018-01-01T10:00:00Z"
+              pagination:
+                per_page: 10
+                current_page: 1
+                is_first_page: true
+                is_last_page: true
+
+    ######################################
+    #           ACCOUNT SCHEMAS          #
+    ######################################
+    AccountSchema:
+      description: "The object schema for an account"
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        parent_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        master:
+          type: boolean
+        avatar:
+          type: object
+        metadata:
+          type: object
+        encrypted_metadata:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - object
+        - id
+        - parent_id
+        - name
+        - master
+        - avatar
+        - created_at
+        - updated_at
+    AccountResponseSchema:
+      description: "The response schema for an account"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            $ref: '#/components/schemas/AccountSchema'
+        required:
+          - data
+        example:
+          version: "1"
+          success: true
+          data:
+            object: "account"
+            id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+            parent_id: "782da516-ec3a-453b-bbc7-4226a5f6fd66"
+            name: "Account Name"
+            description: "The account description"
+            master: true
+            metadata: {}
+            encrypted_metadata: {}
+            avatar: {"original": "file_url"}
+            created_at: "2018-01-01T00:00:00Z"
+            updated_at: "2018-01-01T10:00:00Z"
+    AccountsResponseSchema:
+      description: "The response schema for a list of accounts"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/PaginatedListSchema'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccountSchema'
+        required:
+          - data
+        example:
+          version: "1"
+          success: true
+          data:
+            object: "list"
+            data:
+              - object: "account"
+                id: "9bd32bec-082a-427e-8545-6922952cff35"
+                parent_id: "782da516-ec3a-453b-bbc7-4226a5f6fd66"
+                name: "Account name"
+                description: "The account description"
+                master: true
+                avatar: {"original": "file_url"}
+                created_at: "2018-01-01T00:00:00Z"
+                updated_at: "2018-01-01T10:00:00Z"
+            pagination:
+              per_page: 10
+              current_page: 1
+              is_first_page: true
+              is_last_page: true
+
+    ######################################
+    #            USER SCHEMAS            #
+    ######################################
+    UserSchema:
+      description: "The object schema for a user"
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+        username:
+          type: string
+        provider_user_id:
+          type: string
+        email:
+          type: string
+          format: email
+        metadata:
+          type: object
+        encrypted_metadata:
+          type: object
+        avatar:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - object
+        - id
+        - created_at
+        - updated_at
+      example:
+        object: "user"
+        id: "cec34607-0761-4a59-8357-18963e42a1aa"
+        provider_user_id: "wijf-fbancomw-dqwjudb"
+        username: "johndoe"
+        email: "johndoe@omise.co"
+        metadata: {"first_name": "John", "last_name": "Doe"}
+        encrypted_metadata: {"something": "secret"}
+        avatar: {"original": "file_url"}
+        created_at: "2018-01-01T00:00:00Z"
+        updated_at: "2018-01-01T10:00:00Z"
+    UserResponseSchema:
+      description: "The response schema for a user"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            $ref: '#/components/schemas/UserSchema'
+        required:
+          - data
+        example:
+          data:
+            object: "user"
+            id: "cec34607-0761-4a59-8357-18963e42a1aa"
+            provider_user_id: "wijf-fbancomw-dqwjudb"
+            username: "johndoe"
+            email: "johndoe@omise.co"
+            metadata: {"first_name": "John", "last_name": "Doe"}
+            encrypted_metadata: {"something": "secret"}
+            created_at: "2018-01-01T00:00:00Z"
+            updated_at: "2018-01-01T10:00:00Z"
+    UsersResponseSchema:
+      description: "The response schema for a list of users"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/PaginatedListSchema'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserSchema'
+        required:
+          - data
+        example:
+          version: "1"
+          success: true
+          data:
+            object: "list"
+            data:
+              - object: "user"
+                id: "cec34607-0761-4a59-8357-18963e42a1aa"
+                provider_user_id: "wijf-fbancomw-dqwjudb"
+                username: "johndoe"
+                email: "johndoe@omise.co"
+                metadata: {"first_name": "John", "last_name": "Doe"}
+                encrypted_metadata: {"something": "secret"}
+                created_at: "2018-01-01T00:00:00Z"
+                updated_at: "2018-01-01T10:00:00Z"
+            pagination:
+              per_page: 10
+              current_page: 1
+              is_first_page: true
+              is_last_page: true
+
+    ######################################
+    #         ADMIN USER SCHEMAS         #
+    ######################################
+    AdminResponseSchema:
+      description: "The response schema for an admin user"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            $ref: '#/components/schemas/UserSchema'
+        required:
+          - data
+        example:
+          data:
+            object: "user"
+            id: "cec34607-0761-4a59-8357-18963e42a1aa"
+            provider_user_id: "wijf-fbancomw-dqwjudb"
+            username: "johndoe"
+            email: "johndoe@omise.co"
+            metadata: {"first_name": "John", "last_name": "Doe"}
+            encrypted_metadata: {"something": "secret"}
+            avatar: {"original": "file_url"}
+            created_at: "2018-01-01T00:00:00Z"
+            updated_at: "2018-01-01T10:00:00Z"
+    AdminsResponseSchema:
+      description: "The response schema for a list of admin users"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/PaginatedListSchema'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserSchema'
+        required:
+          - data
+        example:
+          version: "1"
+          success: true
+          data:
+            object: "list"
+            data:
+              - object: "user"
+                id: "cec34607-0761-4a59-8357-18963e42a1aa"
+                provider_user_id: "wijf-fbancomw-dqwjudb"
+                username: "johndoe"
+                email: "johndoe@omise.co"
+                metadata: {"first_name": "John", "last_name": "Doe"}
+                encrypted_metadata: {"something": "secret"}
+                avatar: {"original": "file_url"}
+                created_at: "2018-01-01T00:00:00Z"
+                updated_at: "2018-01-01T10:00:00Z"
+            pagination:
+              per_page: 10
+              current_page: 1
+              is_first_page: true
+              is_last_page: true
+
+    ######################################
+    #         TRANSACTION SCHEMAS        #
+    ######################################
+    TransactionSchema:
+      description: "The object schema for a transaction"
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        from:
+          type: object
+          properties:
+            object:
+              type: string
+            address:
+              type: string
+            amount:
+              type: number
+            minted_token:
+              type: object
+              $ref: '#/components/schemas/MintedTokenSchema'
+        to:
+          type: object
+          properties:
+            object:
+              type: string
+            address:
+              type: string
+            amount:
+              type: number
+            minted_token:
+              type: object
+              $ref: '#/components/schemas/MintedTokenSchema'
+        exchange:
+          type: object
+          properties:
+            object:
+              type: string
+            rate:
+              type: number
+        metadata:
+          type: object
+        encrypted_metadata:
+          type: object
+        status:
+          type: string
+          enum:
+            - comfirmed
+            - pending
+            - failed
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - object
+        - id
+        - idempotency_token
+        - from
+        - to
+        - exchange
+        - status
+        - created_at
+        - updated_at
+    TransactionResponseSchema:
+      description: "The response schema for a transaction"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            $ref: '#/components/schemas/TransactionSchema'
+        required:
+          - data
+        example:
+          version: "1"
+          success: true
+          data:
+            object: "transaction"
+            id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+            idempotency_token: "123982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+            from:
+              object: "transaction_source"
+              address: "XXX123"
+              amount: 1000
+              minted_token:
+                object: "minted_token"
+                id: "ABC:xe3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                symbol: "ABC"
+                name: "ABC Point"
+                subunit_to_unit: 100
+                created_at: "2018-01-01T00:00:00Z"
+                updated_at: "2018-01-01T10:00:00Z"
+            to:
+              object: "transaction_source"
+              address: "XXX123"
+              amount: 1000
+              minted_token:
+                object: "minted_token"
+                id: "ABC:xe3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                symbol: "ABC"
+                name: "ABC Point"
+                subunit_to_unit: 100
+                created_at: "2018-01-01T00:00:00Z"
+                updated_at: "2018-01-01T10:00:00Z"
+            metadata: {}
+            encrypted_metadata: {}
+            exchange:
+              object: "exchange"
+              rate: 1
+            status: "confirmed"
+            created_at: "2018-01-01T00:00:00Z"
+            updated_at: "2018-01-01T10:00:00Z"
+    TransactionsResponseSchema:
+      description: "The response schema for a list of transactions"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/PaginatedListSchema'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TransactionSchema'
+        required:
+          - data
+        example:
+          version: "1"
+          success: true
+          data:
+            object: "list"
+            data:
+              - object: "transaction"
+                id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                from:
+                  object: "transaction_source"
+                  address: "XXX123"
+                  amount: 1000
+                  minted_token:
+                    object: "minted_token"
+                    id: "ABC:xe3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                    symbol: "ABC"
+                    name: "ABC Point"
+                    subunit_to_unit: 100
+                    created_at: "2018-01-01T00:00:00Z"
+                    updated_at: "2018-01-01T10:00:00Z"
+                to:
+                  object: "transaction_source"
+                  address: "XXX123"
+                  amount: 1000
+                  minted_token:
+                    object: "minted_token"
+                    id: "ABC:xe3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                    symbol: "ABC"
+                    name: "ABC Point"
+                    subunit_to_unit: 100
+                    created_at: "2018-01-01T00:00:00Z"
+                    updated_at: "2018-01-01T10:00:00Z"
+                exchange:
+                  object: "exchange"
+                  rate: 1
+                metadata: {}
+                encrypted_metadata: {}
+                status: "confirmed"
+                created_at: "2018-01-01T00:00:00Z"
+                updated_at: "2018-01-01T10:00:00Z"
+            pagination:
+              per_page: 10
+              current_page: 1
+              is_first_page: true
+              is_last_page: true
+
+    ######################################
+    #         ACCESS KEY SCHEMAS         #
+    ######################################
+    AccessKeySchema:
+      description: "The object schema for an access key"
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        access_key:
+          type: string
+        secret_key:
+          type: string
+          nullable: true
+        account_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - object
+        - id
+        - access_key
+        - account_id
+        - created_at
+        - updated_at
+        - deleted_at
+    AccessKeyResponseSchema:
+      description: "The response schema for an access key"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            $ref: '#/components/schemas/AccessKeySchema'
+        required:
+          - data
+        example:
+          version: "1"
+          success: true
+          data:
+            object: "key"
+            id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+            access_key: "jZKpGKgwy5LJTWwXqSD4jVWYDdnTKHlRYkaNB6SqsaQ"
+            secret_key: "the_secret_key_or_null"
+            account_id: "1e3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+            created_at: "2018-01-01T00:00:00Z"
+            updated_at: "2018-01-01T10:00:00Z"
+            deleted_at: null
+    AccessKeysResponseSchema:
+      description: "The response schema for a list of access keys"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/PaginatedListSchema'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccessKeySchema'
+        required:
+          - data
+        example:
+          version: "1"
+          success: true
+          data:
+            object: "list"
+            data:
+              - object: "key"
+                id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                access_key: "jZKpGKgwy5LJTWwXqSD4jVWYDdnTKHlRYkaNB6SqsaQ"
+                secret_key: "the_secret_key_or_null"
+                account_id: "1e3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                created_at: "2018-01-01T00:00:00Z"
+                updated_at: "2018-01-01T10:00:00Z"
+                deleted_at: null
+            pagination:
+              per_page: 10
+              current_page: 1
+              is_first_page: true
+              is_last_page: true
+
+    ######################################
+    #           API KEY SCHEMAS          #
+    ######################################
+    APIKeySchema:
+      description: "The object schema for an API key"
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        owner_app:
+          type: string
+        account_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - object
+        - id
+        - key
+        - owner_app
+        - account_id
+        - created_at
+        - updated_at
+        - deleted_at
+    APIKeyResponseSchema:
+      description: "The response schema for an API key"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            $ref: '#/components/schemas/APIKeySchema'
+        required:
+          - data
+        example:
+          version: "1"
+          success: true
+          data:
+            object: "api_key"
+            id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+            key: "jZKpGKgwy5LJTWwXqSD4jVWYDdnTKHlRYkaNB6SqsaQ"
+            owner_app: "admin_api"
+            account_id: "1e3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+            created_at: "2018-01-01T00:00:00Z"
+            updated_at: "2018-01-01T10:00:00Z"
+            deleted_at: null
+    APIKeysResponseSchema:
+      description: "The response schema for a list of API keys"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/PaginatedListSchema'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/APIKeySchema'
+        required:
+          - data
+        example:
+          version: "1"
+          success: true
+          data:
+            object: "list"
+            data:
+              - object: "api_key"
+                id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                key: "jZKpGKgwy5LJTWwXqSD4jVWYDdnTKHlRYkaNB6SqsaQ"
+                owner_app: "admin_api"
+                account_id: "1e3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                created_at: "2018-01-01T00:00:00Z"
+                updated_at: "2018-01-01T10:00:00Z"
+                deleted_at: null
+            pagination:
+              per_page: 10
+              current_page: 1
+              is_first_page: true
+              is_last_page: true
+
+  requestBodies:
+    ######################################
+    #       SESSION REQUEST BODIES       #
+    ######################################
+    LoginBody:
+      description: The parameters to use for logging in a user
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+                format: password
+            required:
+              - email
+              - password
+            example:
+              email: "test@example.com"
+              password: "the_password"
+    ResetPasswordBody:
+      description: The parameters to use for requesting a reset password
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              email:
+                type: string
+                format: email
+              redirect_url:
+                type: string
+            required:
+              - email
+              - redirect_url
+            example:
+              email: "test@example.com"
+              redirect_url: "https://example.com/admin/update_password?email={email}&token={token}"
+    UpdatePasswordBody:
+      description: The parameters to use for reseting a password
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              email:
+                type: string
+                format: email
+              token:
+                type: string
+              password:
+                type: string
+                format: password
+              password_confirmation:
+                type: string
+                format: password
+            required:
+              - email
+              - redirect_url
+              - password
+              - password_confirmation
+            example:
+              email: "test@example.com"
+              token: "26736ca1-43a0-442b-803e-76220cd3cb1d"
+              password: "nZi9Enc5$l#"
+              password_confirmation: "nZi9Enc5$l#"
+
+    ######################################
+    #     MINTED TOKEN REQUEST BODIES    #
+    ######################################
+    MintedTokenAllBody:
+      description: The parameters to use for listing the minted tokens
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              page:
+                type: integer
+                minimum: 1
+              per_page:
+                type: integer
+                minimum: 1
+              search_term:
+                type: string
+              sort_by:
+                type: string
+              sort_dir:
+                type: string
+                enum: ["asc", "desc"]
+            example:
+              page: 1
+              per_page: 10
+              search_term: ""
+              sort_by: "field_name"
+              sort_dir: "asc"
+    MintedTokenGetBody:
+      description: The parameters to use for retrieving a specific minted token by its id
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              id:
+                type: string
+            required:
+              - id
+            example:
+              id: "ABC:ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+    # Request body for creating a minted token
+    MintedTokenCreateBody:
+        description: The parameters to create a minted token. Note that if amount is specified, the token will be minted automatically.
+        required: true
+        content:
+          application/vnd.tokenplay.v1+json:
+            schema:
+              properties:
+                name:
+                  type: string
+                symbol:
+                  type: string
+                description:
+                  type: string
+                subunit_to_unit:
+                  type: integer
+                amount:
+                  type: integer
+                iso_code:
+                  type: string
+                short_symbol:
+                  type: string
+                subunit:
+                  type: string
+                symbol_first:
+                  type: boolean
+                html_entity:
+                  type: string
+                iso_numeric:
+                  type: string
+                smallest_denomination:
+                  type: integer
+                metadata:
+                  type: object
+                encrypted_metadata:
+                  type: object
+              required:
+                - name
+                - symbol
+                - description
+                - subunit_to_unit
+              example:
+                symbol: "BTC"
+                name: "Bitcoin"
+                description: "desc"
+                subunit_to_unit: 100
+    # Request body for listing accounts
+    AccountAllBody:
+      description: The parameters to use for listing the accounts
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              page:
+                type: integer
+                minimum: 1
+              per_page:
+                type: integer
+                minimum: 1
+              search_term:
+                type: string
+              sort_by:
+                type: string
+              sort_dir:
+                type: string
+                enum: ["asc", "desc"]
+            example:
+              page: 1
+              per_page: 10
+              search_term: ""
+              sort_by: "field_name"
+              sort_dir: "asc"
+    AccountGetBody:
+      description: The parameters to use for retrieving a specific account by its id
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              id:
+                type: string
+                format: uuid
+            required:
+              - id
+            example:
+              id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+    AccountCreateBody:
+      description: The parameters to use for creating a new account
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              master:
+                type: string
+              metadata:
+                type: object
+              encrypted_metadata:
+                type: object
+            required:
+              - name
+            example:
+              name: "Account Name"
+              description: "The account description"
+              master: true
+              metadata: {}
+              encrypted_metadata: {}
+    AccountUpdateBody:
+      description: The parameters to use for updating an account
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              master:
+                type: string
+              metadata:
+                type: object
+              encrypted_metadata:
+                type: object
+            required:
+              - id
+              - name
+              - description
+              - master
+            example:
+              id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+              name: "Account Name"
+              description: "The account description"
+              master: true
+              metadata: {}
+              encrypted_metadata: {}
+    AccountListUsersBody:
+      description: The parameters to use for assigning listing users in an account
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              account_id:
+                type: string
+                format: uuid
+            required:
+              - account_id
+            example:
+              account_id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+    AccountAssignUserBody:
+      description: The parameters to use for assigning a user to an account
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            oneOf:
+              - properties:
+                  user_id:
+                    type: string
+                    format: uuid
+                  account_id:
+                    type: string
+                    format: uuid
+                  role_name:
+                    type: string
+                  redirect_url:
+                    type: string
+                required:
+                  - user_id
+                  - account_id
+                  - role_name
+                  - redirect_url
+                example:
+                  user_id: "582edb32-1b7e-46aa-95f2-e0b3f57d71d3"
+                  account_id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                  role_name: "admin"
+                  redirect_url: "https://domain/redirect_path?email={email}&token={token}"
+              - properties:
+                  email:
+                    type: string
+                  account_id:
+                    type: string
+                    format: uuid
+                  role_name:
+                    type: string
+                required:
+                  - email
+                  - account_id
+                  - role_name
+                  - redirect_url
+                example:
+                  email: "user@example.com"
+                  account_id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                  role_name: "admin"
+                  redirect_url: "https://domain/redirect_path?email={email}&token={token}"
+            example:
+              account_id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+              user_id: "582edb32-1b7e-46aa-95f2-e0b3f57d71d3"
+              role_name: "admin"
+              redirect_url: "https://domain/redirect_path?email={email}&token={token}"
+    AccountUnassignUserBody:
+      description: The parameters to use for unassigning a user from an account
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              user_id:
+                type: string
+                format: uuid
+              account_id:
+                type: string
+                format: uuid
+            required:
+              - user_id
+              - account_id
+            example:
+              account_id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+              user_id: "582edb32-1b7e-46aa-95f2-e0b3f57d71d3"
+    AccountUploadBody:
+      description: The parameters to use for uploading an account's avatar. Only supports .jpg, .jpeg, .gif and .png.
+      required: true
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            properties:
+              id:
+                type: string
+                format: uuid
+              avatar:
+                type: string
+                format: binary
+            required:
+              - id
+              - avatar
+            example:
+              id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+              avatar: "/path/to/file"
+
+    ######################################
+    #         USER REQUEST BODIES        #
+    ######################################
+    UserAllBody:
+      description: The parameters to use for listing the users
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              page:
+                type: integer
+                minimum: 1
+              per_page:
+                type: integer
+                minimum: 1
+              search_term:
+                type: string
+              sort_by:
+                type: string
+              sort_dir:
+                type: string
+                enum: ["asc", "desc"]
+            example:
+              page: 1
+              per_page: 10
+              search_term: ""
+              sort_by: "field_name"
+              sort_dir: "asc"
+    UserGetBody:
+      description: The parameters to use for retrieving a specific user by its id
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              id:
+                type: string
+                format: uuid
+            required:
+              - id
+            example:
+              id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+    InviteAcceptBody:
+      description: The parameters to use for accepting an invite
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              email:
+                type: string
+              token:
+                type: string
+              password:
+                type: string
+              password_confirmation:
+                type: string
+            required:
+              - email
+              - token
+              - password
+              - password_confirmation
+            example:
+              email: "example@omise.co"
+              token: "dmWEOiEvlPfEpb2XPEkNkNYR4xEqNuf25E9hqBYwvzg"
+              password: "user_provided_password"
+              password_confirmation: "user_provided_password"
+
+    ######################################
+    #     TRANSACTION REQUEST BODIES     #
+    ######################################
+    TransactionAllBody:
+      description: The parameters to use for listing the transactions
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              page:
+                type: integer
+                minimum: 1
+              per_page:
+                type: integer
+                minimum: 1
+              search_term:
+                type: string
+              sort_by:
+                type: string
+              sort_dir:
+                type: string
+                enum: ["asc", "desc"]
+            example:
+              page: 1
+              per_page: 10
+              search_term: ""
+              sort_by: "created_at"
+              sort_dir: "desc"
+    TransactionGetBody:
+      description: The parameters to use for retrieving a specific transaction by its id
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              id:
+                type: string
+                format: uuid
+            required:
+              - id
+            example:
+              id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+
+    ######################################
+    #      ADMIN USER REQUEST BODIES     #
+    ######################################
+    AdminAllBody:
+      description: The parameters to use for listing the admins
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              page:
+                type: integer
+                minimum: 1
+              per_page:
+                type: integer
+                minimum: 1
+              search_term:
+                type: string
+              sort_by:
+                type: string
+              sort_dir:
+                type: string
+                enum: ["asc", "desc"]
+            example:
+              page: 1
+              per_page: 10
+              search_term: ""
+              sort_by: "email"
+              sort_dir: "asc"
+    AdminGetBody:
+      description: The parameters to use for retrieving a specific admin by its id
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              id:
+                type: string
+                format: uuid
+            required:
+              - id
+            example:
+              id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+    AdminUploadBody:
+      description: The parameters to use for uploading an admin's avatar. Only supports .jpg, .jpeg, .gif and .png.
+      required: true
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            properties:
+              id:
+                type: string
+                format: uuid
+              avatar:
+                type: string
+                format: binary
+            required:
+              - id
+              - avatar
+            example:
+              id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+              avatar: "/path/to/file"
+
+    ######################################
+    #      ACCESS KEY REQUEST BODIES     #
+    ######################################
+    AccessKeyAllBody:
+      description: The parameters to use for listing the access keys
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              page:
+                type: integer
+                minimum: 1
+              per_page:
+                type: integer
+                minimum: 1
+              search_term:
+                type: string
+              sort_by:
+                type: string
+              sort_dir:
+                type: string
+                enum: ["asc", "desc"]
+            example:
+              page: 1
+              per_page: 10
+              search_term: ""
+              sort_by: "created_at"
+              sort_dir: "desc"
+    AccessKeyDeleteBody:
+      description: The parameters to use for deleting an access key
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            oneOf:
+              - properties:
+                  id:
+                    type: string
+                    format: uuid
+                required:
+                  - id
+                example:
+                  id: "582edb32-1b7e-46aa-95f2-e0b3f57d71d3"
+              - properties:
+                  access_key:
+                    type: string
+                required:
+                  - access_key
+                example:
+                  access_key: "jZKpGKgwy5LJTWwXqSD4jVWYDdnTKHlRYkaNB6SqsaQ"
+            example:
+              id: "582edb32-1b7e-46aa-95f2-e0b3f57d71d3"
+
+    ######################################
+    #       API KEY REQUEST BODIES       #
+    ######################################
+    APIKeyAllBody:
+      description: The parameters to use for listing the API keys
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              page:
+                type: integer
+                minimum: 1
+              per_page:
+                type: integer
+                minimum: 1
+              search_term:
+                type: string
+              sort_by:
+                type: string
+              sort_dir:
+                type: string
+                enum: ["asc", "desc"]
+            example:
+              page: 1
+              per_page: 10
+              search_term: ""
+              sort_by: "created_at"
+              sort_dir: "asc"
+    APIKeyCreateBody:
+      description: The parameters to use for creating an API key
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              owner_app:
+                type: string
+            required:
+              - owner_app
+            example:
+              owner_app: "admin_api"
+    APIKeyDeleteBody:
+      description: The parameters to use for deleting an API key
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              id:
+                type: string
+                format: uuid
+            required:
+              - id
+            example:
+              id: "582edb32-1b7e-46aa-95f2-e0b3f57d71d3"
+
+  ######################################
+  #          SECURITY SCHEMES          #
+  ######################################
+  securitySchemes:
+    ClientAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: PLAYAdmin Base64(api_key_id:api_key)
+    UserAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: PLAYAdmin Base64(api_key_id:api_key:user_id:authentication_token)
+
+  responses:
+    ######################################
+    #          SESSION RESPONSES         #
+    ######################################
+    AuthenticationTokenResponse:
+      description: "Authentication token response"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/AuthenticationTokenResponseSchema'
+
+    ######################################
+    #        MINTED TOKEN RESPONSES      #
+    ######################################
+    MintedTokenResponse:
+      description: "Returns a single minted tokens"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/MintedTokenResponseSchema'
+    MintedTokensResponse:
+      description: "Returns a list of minted tokens"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/MintedTokensResponseSchema'
+
+    ######################################
+    #          ACCOUNT RESPONSES         #
+    ######################################
+    AccountResponse:
+      description: "Returns a single account"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/AccountResponseSchema'
+    AccountsResponse:
+      description: "Returns a list of accounts"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/AccountsResponseSchema'
+
+    ######################################
+    #            USER RESPONSES          #
+    ######################################
+    UserResponse:
+      description: "Returns a single user"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/UserResponseSchema'
+    UsersResponse:
+      description: "Returns a list of users"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/UsersResponseSchema'
+
+    ######################################
+    #        TRANSACTION RESPONSES       #
+    ######################################
+    TransactionResponse:
+      description: "Returns a single transaction"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/TransactionResponseSchema'
+    TransactionsResponse:
+      description: "Returns a list of transactions"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/TransactionsResponseSchema'
+
+    ######################################
+    #         ADMIN USER RESPONSES       #
+    ######################################
+    AdminResponse:
+      description: "Returns a single admin panel user"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/AdminResponseSchema'
+    AdminsResponse:
+      description: "Returns a list of admin panel users"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/AdminsResponseSchema'
+
+    ######################################
+    #         ACCESS KEY RESPONSES       #
+    ######################################
+    AccessKeyResponse:
+      description: "Returns a single access key"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/AccessKeyResponseSchema'
+    AccessKeysResponse:
+      description: "Returns a list of access keys"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/AccessKeysResponseSchema'
+
+    ######################################
+    #          API KEY RESPONSES         #
+    ######################################
+    APIKeyResponse:
+      description: "Returns a single API key"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/APIKeyResponseSchema'
+    APIKeysResponse:
+      description: "Returns a list of API keys"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/APIKeysResponseSchema'
+
+    ######################################
+    #       MISCELLANEOUS RESPONSES      #
+    ######################################
+    EmptyResponse:
+      description: "Returns an empty response"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/BaseResponseSchema'
+    InternalServerError:
+      description: "Returns an internal server error"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseSchema'

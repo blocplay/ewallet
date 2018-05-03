@@ -1,0 +1,2739 @@
+openapi: 3.0.0
+info:
+  version: "1.0.0"
+  title: TOKEN PLAY BACKEND API
+  description: >
+    This is the documentation for Token Play Backend API. [Token Play Backend Architecture Figure](http://app.blocplays.com/tokenplay_arch.png).
+    
+    # Application
+    
+    The Decentralized App ("Dapp") consists of the following core components:
+    
+      * Home
+      * Store
+      * Messaging
+      * Live Events
+      * Profile
+      * Wallet
+      
+    The goal of this API is to bring together both a `crypto wallet` and a games distribution system like `Steam` using modern web app technologies such as `ElectronJS`.
+    
+    
+    There are several `Backends` within the Token Play environment. It is important to understand that the `eWallet Backend` is the point of entry for the Clients which are then authorized to access the `Gamer Backend` and `Payment Backend`. Game Servers and the Developer Backend may be sending data to the Gamer Backend directly. The `Gamer Backend` is responsible for communicating game related data such as player stats to the `Cassandra Database`. The `eWallet Backend` is responsible for communicating transactions and user related data to a `Postgresql Database`. 
+    
+    
+      **Backends**
+      * eWallet Backend
+      * Gamer Backend
+      * EVM Payment Processing Backend
+      * Developer Backend
+      
+    # Technology
+        
+    The technology stack includes the following:
+    
+      **Client App**
+      * Node.js
+      * ElectronJS (App Rendering/Logic Threading)
+      * React (App Rendering)
+      * Phoenix Framework (Messaging)
+      * Bitraider Framework (Distribution, Downloading, Streaming)
+      
+      **Developer App**
+      * Bitraider (Uploading, Distribution, Versoning, Streaming)
+      * Elixir Web App (Developer Administrator)           
+      
+      **Server**
+      * eWallet Backend API (Account/Ledger/Transactions/Tracking)
+      * Gamer API Backend (Store, Games, Stats)
+      * EVM Backend (Payment processing via EVM. DEX, Fiat)
+      
+      **Decentralized**     
+      * Peer Swarm (DHT based Game Related Data)
+      * IPFS Filesystem (Store Images, Avatars, Game Packages)
+      
+      **Databases**      
+      * Apache Cassandra (Players, Achievements, Stats)
+      * Postgresql (Accounts, Transactions, Ledger)
+      
+      **Third party web APIs**
+      * Twitch API (Streaming)    
+      * YouTube API (Streaming)
+      * ESL API (eSports)        
+    
+    # Development
+    
+    The preferred development operating system is `Ubuntu 16.04 LTS`.
+    
+    
+    A `docker` file will be created of the development environment. And of course a bash script.
+    
+    
+    Packages should be compiled from scratch on Ubuntu. Do not trust Ubuntu's apt-get dependencies.
+    
+    
+      **Dependencies**
+      * LIBSODIUM_VERSION="1.0.15"
+      * YARN_VERSION="1.5.1-1"
+      * NODEJS_VERSION="8.x"
+      * ELIXIR_VERSION="1.6"
+      
+      Once the buildscript will complete `./configure && make && make install` for these packages automagically.
+    
+    
+    **Programming Languages**
+    
+    
+    A few thoughts on programming language choices. Our primary backend logic language of choice is `elixir`. Elixir is a dynamic, functional language designed for building scalable and maintainable applications. Elixir leverages the `Erlang VM` called `OTP` (Open Telephone Platform), known for running low-latency, distributed and fault-tolerant systems, while also being successfully used in web development and the embedded software domain. Elixir is used by companies such as Heroku, WhatsApp, and Netflix.
+
+  
+    **Endpoints**
+    
+    
+    At the moment two kinds of endpoints can be found in this document: the `server` endpoints
+    and the `client` (mobile, desktop, backend) endpoints.
+
+
+    All API calls that modify the database need to be done from the server
+    for security purposes, while retrieval calls can be made from the client
+    (considered unsafe, `never trust the client`).
+
+
+    Both server and client calls are authorized using the 'Authorization'
+    HTTP header with the following format:
+
+
+    - Server: Authorization=PLAYServer Base64(access_key:secret_key)
+
+    - Client: Authorization=PLAYClient Base64(api_key:authentication_token)
+
+
+    Due to HTTP-RPC nature, the API will always return a `200` HTTP status,
+    including on errors. Only in case of an internal server error that `500`
+    will be returned.
+    
+    # Data Structures
+    
+      **Wallet Base (object)**
+      + account_id (number, required)             - id of the player
+      + last_transaction (number)                 - Last transaction
+      + transaction_type (string)                 - Transaction type
+
+      **Game Base (object)**
+      + name (string, required)                   - Name of the game
+      + publisher (string, required)              - Name of the publisher (this should eventually be linked to another data type)
+      + description (string)                      - Description of this game (needs expansion)
+      + rating (number)                           - Aggregare star rating for this game
+      + number_ratings (number)                   - Number of ratings given
+      + image (string)                            - Optional URL path to an image for this game
+      + is_purchased (boolean)                    - Flag whether the current user owns this game
+      + is_favorite (boolean)                     - Flag whether the CURRENT ACCOUNT has favorited this game
+    
+      **Account Base (object)**
+      + email (string, required)                  - Account email used for login
+      + first_name (string)                       - First name of the account holder
+      + last_name (string)                        - Last name of the account holder
+      + language (string)                         - Interface language
+      + display_name (string, required)           - Screen/Display name
+      + token_balance (number, required)          - Token balance for account
+      + avatar (string)                           - URL path to avatar thumnbail
+      + status (string)                           - Current status
+      
+      **Trophy Base (object)**
+      + game_id (number)                          - Optional link to an associated game
+      + name (string)                             - Name of this trophy
+      + tier (string)                             - gold, silver, bronze
+      + description (string)                      - Description of how to earn this trophy
+      + image (string)                            - Optional URL path to an image for this trophy
+      + is_earned (boolean)                       - Flag whether the current user has earned this trophy
+      
+      **Community Base (object)**
+      + date_added (string, required)             - Date this object was created
+      + creator_id (number, required)             - creator of the community
+      + description (string)                      - Description and purpose of this community
+      + image (string)                            - Optional URL path to an image for this trophy
+      + is_favorite (boolean)                     - Flag whether the current user has favorited this community
+      + has_joined (boolean)                      - Flag whether the current user has joined this community
+      
+      **Event Base (object)**
+      + id (number, required)                     - The unique identifier for an event
+      + date_created (string, required)           - Date this object was created
+      + creator_id (number, required)             - creator of the event
+      + start_time (string, required)             - Date and time the event is scheduled to start
+      + end_time (string, required)               - Date and time the event is scheduled to end
+      + name (string, required)                   - Name of the event
+      + game_id (number)                          - optional link to Game
+      + community_id (number)                     - optional link to Community
+      + description (string)                      - Description of this event
+      + image (string)                            - Optional URL path to an image for this trophy
+      + is_favorite (boolean)                     - Flag whether the CURRENT ACCOUNT has favorited this event
+      
+      **LiveEvent Base (object)**
+      + id (number, required)                     - The unique identifier for a live event
+      + date_created (string, required)           - Date this object was created
+      + creator_id (number, required)             - creator of the live event
+      + start_time (string, required)             - Date and time the event is scheduled to start
+      + name (string, required)                   - Name of the event
+      + game_id (number)                          - optional link to Game
+      + community_id (number)                     - optional link to Community
+      + description (string)                      - Description of this live event
+      + is_subscribed (boolean)                   - Flag whether the CURRENT ACCOUNT has subscribed to this live event
+      + is_favorite (boolean)                     - Flag whether the CURRENT ACCOUNT has favorited this live event
+      
+      **Conversation Base (object)**
+      + date_created (string, required)           - Date this object was created
+      + type (string, required)                   - group or direct
+      + author_id (number, required)              - User account who originally created this community
+      + is_favorite (boolean)                     - Flag whether the CURRENT ACCOUNT has favorited this conversation
+      
+      **Message Base (object)**
+      + date (string, required)                   - Date this message was sent
+      + date_read (string)                        - Date this message was read,TODO, design this for multiple receipients
+      + type (string, required)                   - message, event or attachment
+      + author (Account, required)                - author of the message
+      + data (string)                             - content of the message (depends on type)
+      
+      **FriendRequest Base (object)**
+      + sender_id (number, required)              - ID of the sending account
+      + recipient_id (number, required)           - ID of the recieving account
+      + date_requested (string)                   - Date and time this request was sent
+      + status (string)                           - "open", "rejected", "accepted"
+    
+    
+  contact:
+    name: Vince McMullin, CTO
+    email: vincem@tokenplay.com
+
+tags:
+  - name: Session
+  - name: User
+  - name: Balance
+  - name: Setting
+  - name: Transaction
+  - name: TransactionRequest
+  - name: Friend
+  - name: Messaging
+  - name: Games
+  - name: Community Features
+
+servers:
+  - url: /api
+
+paths:
+  ######################################
+  #          FRIEND ENDPOINTS          #
+  ######################################
+  /friend.get/{id}:
+    post:
+      description: Client - Retrieve the details of a specific friend request
+      summary: Client - Get a specific friend request
+      tags:
+      - Friend
+      operationId: friend_get
+      requestBody:
+        $ref: '#/components/requestBodies/FriendIdBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/FriendResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /friend.create/{id}:
+    post:
+      description: Server - Accepts or rejects a friend request.
+      summary: Server - Accept or reject a friend request
+      tags:
+      - Friend
+      operationId: friend_create
+      requestBody:
+        $ref: '#/components/requestBodies/FriendCreateBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/FriendResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /friend.delete/{id}:
+    post:
+      description: Server - Delete friend
+      summary: Server - Cancel friend request
+      tags:
+      - Friend
+      operationId: friend_delete
+      requestBody:
+        $ref: '#/components/requestBodies/FriendDeleteBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/FriendResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /friend.list/:
+    post:
+      description: 'Client - List open friend requests'
+      summary: Client - List open friend requests
+      tags:
+      - Friend
+      operationId: friend_list
+      requestBody:
+        $ref: '#/components/requestBodies/FriendListBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/FriendResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /friend.request/:
+    post:
+      description: 'Server - Send friend request'
+      summary: Server - Send friend request
+      tags:
+      - Friend
+      operationId: friend_request
+      requestBody:
+        $ref: '#/components/requestBodies/FriendRequestBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/FriendResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  ######################################
+  #          MESSAGING ENDPOINTS       #
+  ######################################
+  /conversations.get/{id}:
+    post:
+      description: 'Client - Retrieve Messages from a Conversation'
+      summary: Retrieve Messages from a Conversation
+      tags:
+      - Messaging
+      operationId: conversations_get
+      requestBody:
+        $ref: '#/components/requestBodies/ConversationsIdBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/ConversationsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /conversations.create/{id}:
+    post:
+      description: >-
+        Post to a conversation to add a message, or leave or join the group. By using the message type "event" you can perform certain subactions.
+
+        "join" - adds the logged in user to the conversation
+
+        "depart" - removes the logged in user from the conversation
+      summary: Server - Post to a conversation
+      tags:
+      - Messaging
+      operationId: conversations_create
+      requestBody:
+        $ref: '#/components/requestBodies/ConversationsCreateBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/ConversationsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /conversations.list/:
+    post:
+      description: Client - Retrieves all (user specific) conversations.
+      summary: Client - Get list of conversations
+      tags:
+      - Messaging
+      operationId: conversations_list
+      requestBody:
+        $ref: '#/components/requestBodies/ConversationsListBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/ConversationsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /conversations.create/:
+    post:
+      description: ''
+      summary: Server - Create a new conversation
+      tags:
+      - Messaging
+      operationId: conversations_create
+      requestBody:
+        $ref: '#/components/requestBodies/ConversationsCreateBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/ConversationsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  ######################################
+  #          GAME ENDPOINTS            #
+  ######################################
+  /games.get/{id}:
+    post:
+      description: ''
+      summary: Client - Get Game Detail
+      tags:
+      - Games
+      operationId: game_get
+      requestBody:
+        $ref: '#/components/requestBodies/GameIdBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/GameResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /games.list/:
+    post:
+      description: Retrieves a list of games.
+      summary: Client - List Games
+      tags:
+      - Games
+      operationId: game_list
+      requestBody:
+        $ref: '#/components/requestBodies/GameListBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/GameResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  ######################################
+  #          TROPHY ENDPOINTS          #
+  ######################################
+  /trophies.get/{id}:
+    post:
+      description: ''
+      summary: Client - Get Trophy Details
+      tags:
+      - Community Features
+      operationId: trophies_get
+      requestBody:
+        $ref: '#/components/requestBodies/TrophiesIdBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/TrophiesResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /trophies.list/:
+    post:
+      description: Client - A collection of trophies.
+      summary: Client - List Trophies
+      tags:
+      - Community Features
+      operationId: trophies_list
+      requestBody:
+        $ref: '#/components/requestBodies/TrophiesListBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/TrophiesResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  ######################################
+  #          COMMUNITY ENDPOINTS       #
+  ######################################
+  /communities.get/{id}:
+    post:
+      description: ''
+      summary: Client - Get Community Details
+      tags:
+      - Community Features
+      operationId: community_get
+      requestBody:
+        $ref: '#/components/requestBodies/CommunityIdBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/CommunityResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /communities.update/{id}:
+    post:
+      description: ''
+      summary: Server - Update Community Details
+      tags:
+      - Community Features
+      operationId: community_update
+      requestBody:
+        $ref: '#/components/requestBodies/CommunityUpdateBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/CommunityResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /communities.delete/{id}:
+    post:
+      description: ''
+      summary: Server - Remove Community
+      tags:
+      - Community Features
+      operationId: community_delete
+      requestBody:
+        $ref: '#/components/requestBodies/CommunityDeleteBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/CommunityResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /communities.list/:
+    post:
+      description: >-
+        Returns a list of communities.
+
+        + Atttributes
+            + query (string) - An optional search query to filter community results by.
+            + game_id (number) - An optional game to restrict community results to
+            + account_id (number) - An optional account to restrict community results to (joined communities)
+      summary: Client - List Communities
+      tags:
+      - Community Features
+      operationId: community_list
+      requestBody:
+        $ref: '#/components/requestBodies/CommunityListBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/CommunityResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /communities.create/:
+    post:
+      description: Server - Creates a new community.
+      summary: Server - Create Community
+      tags:
+      - Community Features
+      operationId: community_create
+      requestBody:
+        $ref: '#/components/requestBodies/CommunityCreateBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/CommunityResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  ######################################
+  #          EVENTS ENDPOINTS          #
+  ######################################
+  /events.get/{id}:
+    post:
+      description: Client - Retrieve details about an event
+      summary: Client - Get Event Details
+      tags:
+      - Community Features
+      operationId: events_get
+      requestBody:
+        $ref: '#/components/requestBodies/CommunityListBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/CommunityResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /events.update/{id}:
+    post:
+      description: Server - Update details about an event
+      summary: Server - Update Event Details
+      tags:
+      - Community Features
+      operationId: events_update
+      requestBody:
+        $ref: '#/components/requestBodies/EventsUpdateBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/EventsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /events.delete/{id}:
+    post:
+      description: Server - Remove an event
+      summary: Server - Remove Event
+      tags:
+      - Community Features
+      operationId: events_delete
+      requestBody:
+        $ref: '#/components/requestBodies/EventsDeleteBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/EventsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /events.list/:
+    post:
+      description: >-
+        Returns a list of events.
+
+        + Atttributes
+            + query (string) - An optional search query to filter event results by.
+            + game_id (number) - An optional game to restrict event results to
+            + account_id (number) - An optional account to restrict event results to (participating events)
+      summary: Client - List Events
+      tags:
+      - Community Features
+      operationId: events_list
+      requestBody:
+        $ref: '#/components/requestBodies/EventsListBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/EventsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /events.create/:
+    post:
+      description: Server - Create a new event.
+      summary: Server - Create Event
+      tags:
+      - Community Features
+      operationId: events_create
+      requestBody:
+        $ref: '#/components/requestBodies/EventsCreateBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/EventsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  ######################################
+  #          LIVE ENDPOINTS            #
+  ######################################
+  /live.get/{id}:
+    post:
+      description: Client - Get details about a live event
+      summary: Client - Get LiveEvent Details
+      tags:
+      - Community Features
+      operationId: live_get
+      requestBody:
+        $ref: '#/components/requestBodies/LiveIdBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/LiveResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /live.update/{id}:
+    post:
+      description: Server - Update details about a live event
+      summary: Server - Update LiveEvent Details
+      tags:
+      - Community Features
+      operationId: live_update
+      requestBody:
+        $ref: '#/components/requestBodies/LiveUpdateBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/LiveResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /live.remove/{id}:
+    post:
+      description: Server - Remove a live event
+      summary: Server - Remove LiveEvent
+      tags:
+      - Community Features
+      operationId: live_delete
+      requestBody:
+        $ref: '#/components/requestBodies/LiveDeleteBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/LiveResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /live.list/:
+    post:
+      description: >-
+        Returns a list of live events.
+
+        + Atttributes
+            + query (string) - An optional search query to filter live event results by.
+            + game_id (number) - An optional game to restrict live event results to
+            + account_id (number) - An optional account to restrict live event results to (subscribed events)
+      summary: Client - List LiveEvents
+      tags:
+      - Community Features
+      operationId: live_list
+      requestBody:
+        $ref: '#/components/requestBodies/LiveListBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/LiveResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /live.create/:
+    post:
+      description: Server - Create a new LiveEvent
+      summary: Server - Create LiveEvent
+      tags:
+      - Community Features
+      operationId: live_create
+      requestBody:
+        $ref: '#/components/requestBodies/LiveCreateBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/LiveResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  ######################################
+  #          SESSION ENDPOINTS         #
+  ######################################
+  /login:
+    post:
+      tags:
+        - Session
+      summary: Server - Login an existing user.
+      operationId: login
+      security:
+        - ServerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/ProviderIdBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/AuthenticationTokenResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /logout:
+    post:
+      tags:
+        - Session
+      summary: Client - Expires a user's authentication_token.
+      operationId: logout
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/EmptyResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+  ######################################
+  #            USER ENDPOINTS          #
+  ######################################
+  /user.create:
+    post:
+      tags:
+        - User
+      summary: Server - Create a new user
+      operationId: user_create
+      security:
+        - ServerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/UserBody'
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyToken"
+      responses:
+        '200':
+          $ref: "#/components/responses/UserResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /user.update:
+    post:
+      tags:
+        - User
+      summary: Server - Update an existing user
+      operationId: user_update
+      security:
+        - ServerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyToken"
+      requestBody:
+        $ref: '#/components/requestBodies/UserBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/UserResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /user.get:
+    post:
+      tags:
+        - User
+      summary: Server - Get an existing user.
+      operationId: user_get
+      security:
+        - ServerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/ProviderIdBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/UserResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /me.get:
+    post:
+      tags:
+        - User
+      summary: Client - Get the user corresponding to the provided authentication token.
+      operationId: me_get
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/UserResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+  ######################################
+  #          BALANCE ENDPOINTS         #
+  ######################################
+  /user.list_balances:
+    post:
+      tags:
+        - Balance
+      summary: Server - Get the balances of a user.
+      operationId: user_list_balances
+      security:
+        - ServerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/ProviderIdBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/AddressesResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /me.list_balances:
+    post:
+      tags:
+        - Balance
+      summary: Client - Get the balances of a specific user.
+      operationId: me_list_balances
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/AddressesResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /user.credit_balance:
+    post:
+      tags:
+        - Balance
+      summary: Server - Credit the balance of a user.
+      operationId: user_credit_balance
+      security:
+        - ServerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyToken"
+      requestBody:
+        $ref: '#/components/requestBodies/BalanceAdjustmentBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/SingleAddressesResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /user.debit_balance:
+    post:
+      tags:
+        - Balance
+      summary: Server - Debit the balance of a user.
+      operationId: user_debit_balance
+      security:
+        - ServerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyToken"
+      requestBody:
+        $ref: '#/components/requestBodies/BalanceAdjustmentBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/SingleAddressesResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /transfer:
+    post:
+      tags:
+        - Balance
+      summary: Server - Transfer the specified amount between two balances.
+      operationId: transfer
+      security:
+        - ServerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyToken"
+      requestBody:
+        $ref: '#/components/requestBodies/TransferBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/MultipleAddressesResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+  ######################################
+  #          SETTINGS ENDPOINTS        #
+  ######################################
+  /get_settings:
+    post:
+      tags:
+        - Setting
+      summary: Server - Get the global settings.
+      operationId: get_settings
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/SettingResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /me.get_settings:
+    post:
+      tags:
+        - Setting
+      summary: Client - Get the global settings.
+      operationId: me_get_settings
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/SettingResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  ############################
+  #      TRANSACTIONS        #
+  ############################
+  /transaction.all:
+    post:
+      tags:
+        - Transaction
+      summary: Server - Get the list of transactions.
+      operationId: get_all_transactions
+      requestBody:
+        $ref: '#/components/requestBodies/TransactionsBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/TransactionsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /user.list_transactions:
+    post:
+      tags:
+        - Transaction
+      summary: Server - Get the list of transactions for a specific provider_user_id.
+      operationId: get_all_transactions_for_user
+      requestBody:
+        $ref: '#/components/requestBodies/UserTransactionsBody'
+      security:
+        - ServerAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/TransactionsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  /me.list_transactions:
+    post:
+      tags:
+        - Transaction
+      summary: Client - Get the list of transactions for the current user.
+      operationId: get_current_user_transactions
+      requestBody:
+        $ref: '#/components/requestBodies/CurrentUserTransactionsBody'
+      security:
+        - ClientAuth: []
+      responses:
+        '200':
+          $ref: "#/components/responses/TransactionsResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+  ############################
+  #   TRANSACTION REQUESTS   #
+  ############################
+  # Endpoint to create a transaction request
+  /me.create_transaction_request:
+    post:
+      tags:
+        - TransactionRequest
+      summary: Client - Create a new transaction request.
+      description: This is a client call only.
+      operationId: create_transaction_request
+      security:
+        - ClientAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/CreateTransactionRequestBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/TransactionRequestResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  # Endpoint to get a transaction request
+  /me.get_transaction_request:
+    post:
+      tags:
+        - TransactionRequest
+      summary: Client - Get a transaction request.
+      description: This is a client call only.
+      operationId: get_transaction_request
+      security:
+        - ClientAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/GetTransactionRequestBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/TransactionRequestResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+  # Endpoint to consume a transaction request
+  /me.consume_transaction_request:
+    post:
+      tags:
+        - TransactionRequest
+      summary: Client - Consume a transaction request.
+      description: This is a client call only.
+      operationId: consume_transaction_request
+      security:
+        - ClientAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyToken"
+      requestBody:
+        $ref: '#/components/requestBodies/ConsumeTransactionRequestBody'
+      responses:
+        '200':
+          $ref: "#/components/responses/TransactionRequestConsumptionResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
+
+# Components are objects that are reusable within this API spec.
+# They do not have any effect on the API unless they are
+# referenced from properties outside the component.
+components:
+  schemas:
+    ######################################
+    #             BASE SCHEMAS           #
+    ######################################
+    BaseResponseSchema:
+      description: "The response schema for a successful operation"
+      type: object
+      properties:
+        version:
+          type: string
+        success:
+          type: boolean
+        data:
+          type: object
+      required:
+        - version
+        - success
+        - data
+      example:
+        version: "1"
+        success: true
+        data: {}
+    UnpaginatedListSchema:
+      description: "The object schema for an unpaginated list"
+      type: object
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+      required:
+        - object
+        - data
+      example:
+        object: list
+    PaginatedListSchema:
+      description: "The object schema for a paginated list"
+      type: object
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+        pagination:
+          type: object
+          properties:
+            per_page:
+              type: integer
+              minimum: 1
+            current_page:
+              type: integer
+              minimum: 1
+            is_first_page:
+              type: boolean
+            is_last_page:
+              type: boolean
+          required:
+            - per_page
+            - current_page
+            - is_first_page
+            - is_last_page
+      required:
+        - object
+        - data
+        - pagination
+      example:
+        object: list
+        data: []
+        pagination:
+          per_page: 10
+          current_page: 1
+          is_first_page: true
+          is_last_page: true
+
+    ######################################
+    #            ERROR SCHEMAS           #
+    ######################################
+    ErrorSchema:
+      description: "The object schema for an error"
+      type: object
+      properties:
+        object:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        messages:
+          type: object
+      required:
+        - object
+        - code
+        - description
+        - messages
+      example:
+        object: "error"
+        code: "server:internal_server_error"
+        description: "Something went wrong on the server"
+        messages: {"error_key": "error_reason"}
+    ErrorResponseSchema:
+      description: "The response schema for an error"
+      allOf:
+        - $ref: '#/components/schemas/BaseResponseSchema'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ErrorSchema'
+          required:
+            - data
+          example:
+            success: false
+            data:
+              object: "error"
+              code: "server:internal_server_error"
+              description: "Something went wrong on the server"
+              messages: {"error_key":"error_reason"}
+
+    ######################################
+    #          AUTH TOKEN SCHEMAS        #
+    ######################################
+    AuthenticationTokenSchema:
+      description: "The object schema for an authentication token"
+      type: object
+      properties:
+        object:
+          type: string
+        authentication_token:
+          type: string
+      required:
+        - object
+        - authentication_token
+    AuthenticationTokenResponse:
+      description: "The response schema for an authentication token"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            $ref: '#/components/schemas/AuthenticationTokenSchema'
+        required:
+          - data
+        example:
+          data:
+            object: "authentication_token"
+            authentication_token: "azJRj09l7jvR8KhTqUs3"
+
+    ######################################
+    #             USER SCHEMAS           #
+    ######################################
+    UserSchema:
+      description: "The object schema for a user"
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+        username:
+          type: string
+        provider_user_id:
+          type: string
+        metadata:
+          type: object
+        encrypted_metadata:
+          type: object
+      required:
+        - object
+        - id
+        - username
+        - provider_user_id
+      example:
+        object: "user"
+        id: "cec34607-0761-4a59-8357-18963e42a1aa"
+        provider_user_id: "wijf-fbancomw-dqwjudb"
+        username: "vincem@tokenplay.com"
+        metadata: {"first_name": "Vince", "last_name": "McMullin"}
+        encrypted_metadata: {}
+    UserResponseSchema:
+      description: "The response schema for a user"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            $ref: '#/components/schemas/UserSchema'
+        required:
+          - data
+        example:
+          data:
+            object: "user"
+            id: "cec34607-0761-4a59-8357-18963e42a1aa"
+            provider_user_id: "wijf-fbancomw-dqwjudb"
+            username: "vincem@tokenplay.com"
+            metadata: {"first_name": "Vince", "last_name": "McMullin"}
+            encrypted_metadata: {}
+
+    ######################################
+    #            BALANCE SCHEMAS         #
+    ######################################
+    BalanceSchema:
+      description: "The object schema for a balance"
+      type: object
+      properties:
+        object:
+          type: string
+        minted_token:
+          type: object
+          $ref: '#/components/schemas/MintedTokenSchema'
+        amount:
+          type: number
+      required:
+        - object
+        - minted_token
+        - address
+        - amount
+      example:
+        object: "balance"
+        minted_token:
+          object: 'minted_token'
+          id: "BTC:bcb3d05f-00b2-4687-97b9-1b4c9484b641"
+          symbol: "BTC"
+          name: "Bitcoin"
+          subunit_to_unit: 100000000000000000
+        amount: 100
+    BalanceResponse:
+      description: "The response schema for a balance"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            $ref: '#/components/schemas/BalanceSchema'
+        required:
+          - data
+        example:
+          data:
+            object: "balance"
+            minted_token:
+              object: 'minted_token'
+              id: "BTC:bcb3d05f-00b2-4687-97b9-1b4c9484b641"
+              symbol: "BTC"
+              name: "Bitcoin"
+              subunit_to_unit: 100000000000000000
+            amount: 100
+    AddressResponse:
+      description: "The object schema for an address"
+      type: object
+      properties:
+        object:
+          type: string
+        balances:
+          type: array
+          $ref: '#/components/schemas/BalanceSchema'
+        address:
+          type: string
+      required:
+        - balances
+        - address
+      example:
+        data:
+          object: "address"
+          balances: []
+          address: "XXXXXXXXXXXXXXXXXXXXX"
+    SingleAddressesResponse:
+      description: "The response schema for a list with a single address"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/UnpaginatedListSchema'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AddressResponse'
+        required:
+          - object
+          - balances
+          - address
+        example:
+          data:
+            object: list
+            data:
+            - object: "address"
+              address: "XXX123"
+              balances:
+              - amount: 100
+                minted_token:
+                  object: 'minted_token'
+                  id: "BTC:bcb3d05f-00b2-4687-97b9-1b4c9484b641"
+                  symbol: "BTC"
+                  name: "Bitcoin"
+                  subunit_to_unit: 100000000000000000
+    MultipleAddressesResponse:
+      description: "The response schema for a list of multiple addresses (i.e. transfers)"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/UnpaginatedListSchema'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AddressResponse'
+        required:
+          - object
+          - balances
+          - address
+        example:
+          data:
+            object: list
+            data:
+            - object: "address"
+              address: "XXX123"
+              balances:
+              - amount: 0
+                minted_token:
+                  object: 'minted_token'
+                  id: "BTC:bcb3d05f-00b2-4687-97b9-1b4c9484b641"
+                  symbol: "BTC"
+                  name: "Bitcoin"
+                  subunit_to_unit: 100000000000000000
+            - object: "address"
+              address: "XXX456"
+              balances:
+              - amount: 100
+                minted_token:
+                  object: 'minted_token'
+                  id: "BTC:bcb3d05f-00b2-4687-97b9-1b4c9484b641"
+                  symbol: "BTC"
+                  name: "Bitcoin"
+                  subunit_to_unit: 100000000000000000
+    AddressesResponse:
+      description: "The response schema for a list of addresses"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/UnpaginatedListSchema'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AddressResponse'
+        required:
+          - object
+          - balances
+          - address
+        example:
+          data:
+            object: list
+            data:
+            - object: "address"
+              address: "XXX123"
+              balances:
+              - amount: 100
+                minted_token:
+                  object: 'minted_token'
+                  id: "BTC:bcb3d05f-00b2-4687-97b9-1b4c9484b641"
+                  symbol: "BTC"
+                  name: "Bitcoin"
+                  subunit_to_unit: 100000000000000000
+              - amount: 100
+                minted_token:
+                  object: 'minted_token'
+                  id: "PLAY:61822683-68d8-4af6-94d7-5ed4c34ecf1a"
+                  symbol: "PLAY"
+                  name: "tokenplay"
+                  subunit_to_unit: 100000000000000000
+            - object: "address"
+              address: "XXX456"
+              balances: []
+
+    ######################################
+    #         MINTED TOKEN SCHEMAS       #
+    ######################################
+    MintedTokenSchema:
+      description: "The object schema for a minted token"
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+        symbol:
+          type: string
+        name:
+          type: string
+        subunit_to_unit:
+          type: number
+        metadata:
+          type: object
+        encrypted_metadata:
+          type: object
+      required:
+        - object
+        - symbol
+        - name
+        - subunit_to_unit
+      example:
+        object: "minted_token"
+        id: "PLAY:bcb3d05f-00b2-4687-97b9-1b4c9484b641"
+        symbol: "PLAY"
+        name: "Mint"
+        subunit_to_unit: 100000000000000000
+        metadata: {}
+        encrypted_metadata: {}
+
+    ######################################
+    #         TRANSACTION SCHEMAS        #
+    ######################################
+    TransactionSchema:
+      description: "The object schema for a transaction"
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+          format: uuid
+        from:
+          type: object
+          properties:
+            object:
+              type: string
+            address:
+              type: string
+            amount:
+              type: number
+            minted_token:
+              type: object
+              $ref: '#/components/schemas/MintedTokenSchema'
+        to:
+          type: object
+          properties:
+            object:
+              type: string
+            address:
+              type: string
+            amount:
+              type: number
+            minted_token:
+              type: object
+              $ref: '#/components/schemas/MintedTokenSchema'
+        exchange:
+          type: object
+          properties:
+            object:
+              type: string
+            rate:
+              type: number
+        metadata:
+          type: object
+        encrypted_metadata:
+          type: object
+        status:
+          type: string
+          enum:
+            - comfirmed
+            - pending
+            - failed
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - object
+        - id
+        - idempotency_token
+        - from
+        - to
+        - exchange
+        - status
+        - created_at
+        - updated_at
+    TransactionResponseSchema:
+      description: "The response schema for a transaction"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            $ref: '#/components/schemas/TransactionSchema'
+        required:
+          - data
+        example:
+          version: "1"
+          success: true
+          data:
+            object: "transaction"
+            id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+            idempotency_token: "123982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+            from:
+              object: "transaction_source"
+              address: "XXX123"
+              amount: 1000
+              minted_token:
+                object: "minted_token"
+                id: "ABC:xe3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                symbol: "ABC"
+                name: "ABC Point"
+                subunit_to_unit: 100
+            to:
+              object: "transaction_source"
+              address: "XXX123"
+              amount: 1000
+              minted_token:
+                object: "minted_token"
+                id: "ABC:xe3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                symbol: "ABC"
+                name: "ABC Point"
+                subunit_to_unit: 100
+            exchange:
+              object: "exchange"
+              rate: 1
+            metadata: {}
+            encrypted_metadata: {}
+            status: "confirmed"
+            created_at: "2018-01-01T00:00:00Z"
+            updated_at: "2018-01-01T10:00:00Z"
+    TransactionsResponseSchema:
+      description: "The response schema for a list of transactions"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/PaginatedListSchema'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TransactionSchema'
+        required:
+          - data
+        example:
+          version: "1"
+          success: true
+          data:
+            object: "list"
+            data:
+              - object: "transaction"
+                id: "ce3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                from:
+                  object: "transaction_source"
+                  address: "XXX123"
+                  amount: 1000
+                  minted_token:
+                    object: "minted_token"
+                    id: "ABC:xe3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                    symbol: "ABC"
+                    name: "ABC Point"
+                    subunit_to_unit: 100
+                    created_at: "2018-01-01T00:00:00Z"
+                    updated_at: "2018-01-01T10:00:00Z"
+                to:
+                  object: "transaction_source"
+                  address: "XXX123"
+                  amount: 1000
+                  minted_token:
+                    object: "minted_token"
+                    id: "ABC:xe3982f5-4a27-498d-a91b-7bb2e2a8d3d1"
+                    symbol: "ABC"
+                    name: "ABC Point"
+                    subunit_to_unit: 100
+                    created_at: "2018-01-01T00:00:00Z"
+                    updated_at: "2018-01-01T10:00:00Z"
+                exchange:
+                  object: "exchange"
+                  rate: 1
+                metadata: {}
+                encrypted_metadata: {}
+                status: "confirmed"
+                created_at: "2018-01-01T00:00:00Z"
+                updated_at: "2018-01-01T10:00:00Z"
+            pagination:
+              per_page: 10
+              current_page: 1
+              is_first_page: true
+              is_last_page: true
+
+    ######################################
+    #           SETTING SCHEMAS          #
+    ######################################
+    SettingResponse:
+      description: "The response schema for settings"
+      allOf:
+      - $ref: '#/components/schemas/BaseResponseSchema'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              object:
+                type: string
+              minted_tokens:
+                type: array
+                items:
+                 $ref: '#/components/schemas/MintedTokenSchema'
+            required:
+              - object
+              - minted_tokens
+        example:
+          data:
+            object: "setting"
+            minted_tokens:
+              - object: "minted_token"
+                id: "BTC:61822683-68d8-4af6-94d7-5ed4c34ecf1a"
+                symbol: "BTC"
+                name: "Bitcoin"
+                subunit_to_unit: 100000000000000000
+              - object: "minted_token"
+                id: "PLAY:5e9c0be5-15d1-4463-9ec2-02bc8ded7120"
+                symbol: "PLAY"
+                name: "tokenplay"
+                subunit_to_unit: 100000000000000000
+
+    ######################################
+    #        TRANSACTION SCHEMAS         #
+    ######################################
+    # Schema for transaction request response body
+    TransactionRequestResponse:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+        type:
+          type: string
+          enum:
+            - send
+            - receive
+        token_id:
+          type: string
+        amount:
+          type: string
+        address:
+          type: string
+        correlation_id:
+          type: string
+      required:
+        - object
+        - id
+        - type
+        - token_id
+        - amount
+        - address
+        - correlation_id
+      example:
+        data:
+          object: "transaction_request"
+          id: "61230be5-15d1-4463-9ec2-02bc8ded7120"
+          type: "send"
+          token_id: "PLAY:5e9c0be5-15d1-4463-9ec2-02bc8ded7120"
+          amount: 100
+          address: "3a560be5-15d1-4463-9ec2-02bc8ded7120"
+          correlation_id: "123"
+    # Schema for transaction request consumption response body
+    TransactionRequestConsumptionResponse:
+      type: object
+      properties:
+        object:
+          type: string
+        id:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - confirmed
+            - failed
+        amount:
+          type: string
+        token_id:
+          type: string
+        correlation_id:
+          type: string
+        idempotency_token:
+          type: string
+        transaction_id:
+          type: string
+        user_id:
+          type: string
+        transaction_request_id:
+          type: string
+        address:
+          type: string
+      required:
+        - object
+        - id
+        - status
+        - amount
+        - token_id
+        - correlation_id
+        - idempotency_token
+        - transaction_id
+        - user_id
+        - transaction_request_id
+        - address
+      example:
+        data:
+          object: "transaction_request_consumption"
+          id: "61230be5-15d1-4463-9ec2-02bc8ded7120"
+          status: "confirmed"
+          amount: 100
+          token_id: "PLAY:5e9c0be5-15d1-4463-9ec2-02bc8ded7120"
+          correlation_id: "7e9c0be5-15d1-4463-9ec2-02bc8ded7120"
+          idempotency_token: "7831c0be5-15d1-4463-9ec2-02bc8ded7120"
+          transaction_id: "4567c0be5-15d1-4463-9ec2-02bc8ded7120"
+          user_id: "111c0be5-15d1-4463-9ec2-02bc8ded7120"
+          transaction_request_id: "1231c0be5-15d1-4463-9ec2-02bc8ded7120"
+          address: "5555cer3-15d1-4463-9ec2-02bc8ded7120"
+          
+    GameBase:
+      title: Game Base
+      type: object
+      properties:
+        name:
+          description: Name of the game
+          type: string
+        publisher:
+          description: Name of the publisher (this should eventually be linked to another data type)
+          type: string
+        description:
+          description: Description of this game (needs expansion)
+          type: string
+        rating:
+          description: Aggregare star rating for this game
+          type: number
+          format: double
+        number_ratings:
+          description: Number of ratings given
+          type: number
+          format: double
+        image:
+          description: Optional URL path to an image for this game
+          type: string
+        is_purchased:
+          description: Flag whether the current user owns this game
+          type: boolean
+        is_favorite:
+          description: Flag whether the CURRENT ACCOUNT has favorited this game
+          type: boolean
+      required:
+      - name
+      - publisher
+    AccountBase:
+      title: Account Base
+      type: object
+      properties:
+        email:
+          description: Account email used for login
+          type: string
+        display_name:
+          description: Screen/Display name
+          type: string
+        token_balance:
+          description: Token balance for account
+          type: number
+          format: double
+        first_name:
+          description: First name of the account holder
+          type: string
+        last_name:
+          description: Last name of the account holder
+          type: string
+        language:
+          description: Interface language
+          type: string
+        avatar:
+          description: URL path to avatar thumnbail
+          type: string
+        status:
+          description: Current status
+          type: string
+      required:
+      - email
+      - display_name
+      - token_balance
+    TrophyBase:
+      title: Trophy Base
+      type: object
+      properties:
+        game_id:
+          description: Optional link to an associated game
+          type: number
+          format: double
+        name:
+          description: Name of this trophy
+          type: string
+        tier:
+          description: gold, silver, bronze
+          type: string
+        description:
+          description: Description of how to earn this trophy
+          type: string
+        image:
+          description: Optional URL path to an image for this trophy
+          type: string
+        is_earned:
+          description: Flag whether the current user has earned this trophy
+          type: boolean
+    CommunityBase:
+      title: Community Base
+      type: object
+      properties:
+        date_added:
+          description: Date this object was created
+          type: string
+        creator_id:
+          description: creator of the community
+          type: number
+          format: double
+        description:
+          description: Description and purpose of this community
+          type: string
+        image:
+          description: Optional URL path to an image for this trophy
+          type: string
+        is_favorite:
+          description: Flag whether the current user has favorited this community
+          type: boolean
+        has_joined:
+          description: Flag whether the current user has joined this community
+          type: boolean
+      required:
+      - date_added
+      - creator_id
+    EventBase:
+      title: Event Base
+      type: object
+      properties:
+        creator_id:
+          description: creator of the event
+          type: number
+          format: double
+        start_time:
+          description: Date and time the event is scheduled to start
+          type: string
+        end_time:
+          description: Date and time the event is scheduled to end
+          type: string
+        name:
+          description: Name of the event
+          type: string
+        game_id:
+          description: optional link to Game
+          type: number
+          format: double
+        community_id:
+          description: optional link to Community
+          type: number
+          format: double
+        description:
+          description: Description of this event
+          type: string
+        image:
+          description: Optional URL path to an image for this trophy
+          type: string
+        is_favorite:
+          description: Flag whether the CURRENT ACCOUNT has favorited this event
+          type: boolean
+      required:
+      - creator_id
+      - start_time
+      - end_time
+      - name
+    LiveeventBase:
+      title: LiveEvent Base
+      type: object
+      properties:
+        creator_id:
+          description: creator of the live event
+          type: number
+          format: double
+        start_time:
+          description: Date and time the event is scheduled to start
+          type: string
+        name:
+          description: Name of the event
+          type: string
+        game_id:
+          description: optional link to Game
+          type: number
+          format: double
+        community_id:
+          description: optional link to Community
+          type: number
+          format: double
+        description:
+          description: Description of this live event
+          type: string
+        is_subscribed:
+          description: Flag whether the CURRENT ACCOUNT has subscribed to this live event
+          type: boolean
+        is_favorite:
+          description: Flag whether the CURRENT ACCOUNT has favorited this live event
+          type: boolean
+      required:
+      - creator_id
+      - start_time
+      - name
+    ConversationBase:
+      title: Conversation Base
+      type: object
+      properties:
+        author_id:
+          description: User account who originally created this community
+          type: number
+          format: double
+        is_favorite:
+          description: Flag whether the CURRENT ACCOUNT has favorited this conversation
+          type: boolean
+      required:
+      - author_id
+    MessageBase:
+      title: Message Base
+      type: object
+      properties:
+        date:
+          description: Date this message was sent
+          type: string
+        author:
+          description: author of the message
+          type: string
+        date_read:
+          description: Date this message was read,TODO, design this for multiple receipients
+          type: string
+        data:
+          description: content of the message (depends on type)
+          type: string
+      required:
+      - date
+      - author
+    FriendrequestBase:
+      title: FriendRequest Base
+      type: object
+      properties:
+        sender_id:
+          description: ID of the sending account
+          type: number
+          format: double
+        recipient_id:
+          description: ID of the recieving account
+          type: number
+          format: double
+        date_requested:
+          description: Date and time this request was sent
+          type: string
+        status:
+          description: '"open", "rejected", "accepted"'
+          type: string
+      required:
+      - sender_id
+      - recipient_id
+    Account:
+      title: Account
+      allOf:
+      - $ref: '#/components/schemas/AccountBase'
+      - example:
+          email: ''
+          first_name: ''
+          last_name: ''
+          language: ''
+          display_name: ''
+          token_balance: 0
+          avatar: ''
+          status: ''
+          id: 0
+        type: object
+        properties:
+          id:
+            description: The unique id of this account
+            type: number
+            format: double
+        required:
+        - id
+    FriendRequest:
+      title: FriendRequest
+      allOf:
+      - $ref: '#/components/schemas/FriendrequestBase'
+      - example:
+          sender_id: 0
+          recipient_id: 0
+          date_requested: ''
+          status: ''
+          id: ''
+        type: object
+        properties:
+          id:
+            description: The ID of the friend request.
+            type: string
+        required:
+        - id
+    GetASpecificFriendRequestResponse:
+      title: Get a specific friend request response
+      allOf:
+      - $ref: '#/components/schemas/FriendRequest'
+      - example:
+          sender_id: 0
+          recipient_id: 0
+          date_requested: ''
+          status: ''
+          id: ''
+          account:
+            email: ''
+            first_name: ''
+            last_name: ''
+            language: ''
+            display_name: ''
+            token_balance: 0
+            avatar: ''
+            status: ''
+            id: 0
+        type: object
+        properties:
+          account:
+            $ref: '#/components/schemas/Account'
+    RespondToFriendRequestRequest:
+      title: Respond to friend request request
+      type: object
+      properties:
+        response:
+          description: '"accept" or "reject"'
+          type: string
+      required:
+      - response
+    SendFriendRequestRequest:
+      title: Send friend request request
+      type: object
+      properties:
+        recipient_id:
+          description: ID of the account to send request to
+          type: number
+          format: double
+      required:
+      - recipient_id
+    Message:
+      title: Message
+      allOf:
+      - $ref: '#/components/schemas/MessageBase'
+      - type: object
+        properties:
+          id:
+            description: ID of the message
+            type: string
+        required:
+        - id
+    Conversation:
+      title: Conversation
+      allOf:
+      - $ref: '#/components/schemas/ConversationBase'
+      - example:
+          author_id: 0
+          is_favorite: false
+          id: ''
+          participants:
+          - email: ''
+            first_name: ''
+            last_name: ''
+            language: ''
+            display_name: ''
+            token_balance: 0
+            avatar: ''
+            status: ''
+            id: 0
+          start_time: ''
+          end_time: ''
+          messages:
+          - date: ''
+            date_read: ''
+            author: '{"email":"","first_name":"","last_name":"","language":"","display_name":"","token_balance":0,"avatar":"","status":"","id":0}'
+            data: ''
+            id: ''
+        type: object
+        properties:
+          id:
+            description: ID of the conversation
+            type: string
+          participants:
+            description: Who is participating?
+            type: array
+            items:
+              $ref: '#/components/schemas/Account'
+          messages:
+            description: What has been said
+            type: array
+            items:
+              $ref: '#/components/schemas/Message'
+          start_time:
+            description: Date of the first message displayed
+            type: string
+          end_time:
+            description: Date of the last message displayed
+            type: string
+        required:
+        - id
+        - participants
+        - messages
+    GetListOfConversationsRequest:
+      title: Get list of conversations request
+      type: object
+      properties:
+        query:
+          description: A search string to filter conversations by
+          type: string
+    CreateANewConversationRequest:
+      title: Create a new conversation request
+      allOf:
+      - $ref: '#/components/schemas/ConversationBase'
+      - type: object
+        properties:
+          participants:
+            description: List of ids participating in the conversation
+            type: array
+            items:
+              type: number
+              format: double
+          type:
+            description: group or direct
+            type: string
+        required:
+        - participants
+    Game:
+      title: Game
+      allOf:
+      - $ref: '#/components/schemas/GameBase'
+      - type: object
+        properties:
+          id:
+            description: The unique identifier for a game
+            type: number
+            format: double
+        required:
+        - id
+    ListGamesRequest:
+      title: List Games request
+      type: object
+      properties:
+        query:
+          description: An optional search query to filter game results by.
+          type: string
+    Trophy:
+      title: Trophy
+      allOf:
+      - $ref: '#/components/schemas/TrophyBase'
+      - example:
+          game_id: 0
+          name: ''
+          tier: ''
+          description: ''
+          image: ''
+          is_earned: false
+          id: 0
+        type: object
+        properties:
+          id:
+            description: The unique identifier for a trophy
+            type: number
+            format: double
+        required:
+        - id
+    ListTrophiesRequest:
+      title: List Trophies request
+      type: object
+      properties:
+        query:
+          description: An optional search query to filter trophy results by.
+          type: string
+        game_id:
+          description: An optional game to restrict trophy results to
+          type: number
+          format: double
+        account_id:
+          description: An optional account to restrict trophy results to (earned trophies)
+          type: number
+          format: double
+    Community:
+      title: Community
+      allOf:
+      - $ref: '#/components/schemas/CommunityBase'
+      - example:
+          date_added: ''
+          creator_id: 0
+          description: ''
+          image: ''
+          is_favorite: false
+          has_joined: false
+          id: 0
+        type: object
+        properties:
+          id:
+            description: The unique identifier for a community
+            type: number
+            format: double
+        required:
+        - id
+    Event:
+      title: Event
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - example:
+          creator_id: 0
+          start_time: ''
+          end_time: ''
+          name: ''
+          game_id: 0
+          community_id: 0
+          description: ''
+          image: ''
+          is_favorite: false
+          id: 0
+        type: object
+        properties:
+          id:
+            description: The unique identifier for a event
+            type: number
+            format: double
+        required:
+        - id
+    LiveEvent:
+      title: LiveEvent
+      allOf:
+      - $ref: '#/components/schemas/LiveeventBase'
+      - example:
+          creator_id: 0
+          start_time: ''
+          name: ''
+          game_id: 0
+          community_id: 0
+          description: ''
+          is_subscribed: false
+          is_favorite: false
+          id: 0
+        type: object
+        properties:
+          id:
+            description: The unique identifier for a liveevent
+            type: number
+            format: double
+        required:
+        - id
+
+  requestBodies:
+    ######################################
+    #         USER REQUEST BODIES        #
+    ######################################
+    UserBody:
+      description: The parameters to use for creating or updating a user
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              provider_user_id:
+                type: string
+              username:
+                type: string
+              metadata:
+                type: object
+              encrypted_metadata:
+                type: object
+            required:
+              - provider_user_id
+              - username
+            example:
+              provider_user_id: "wijf-fbancomw-dqwjudb"
+              username: "vincem@tokenplay.com"
+              metadata: {"first_name": "Vince", "last_name": "McMullin"}
+              encrypted_metadata: {}
+    ProviderIdBody:
+      description: The parameters to use for providing a provider user id
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              provider_user_id:
+                type: string
+            required:
+              - provider_user_id
+            example:
+              provider_user_id: "wijf-fbancomw-dqwjudb"
+
+    ######################################
+    #            TRANSACTIONS            #
+    ######################################
+    TransactionsBody:
+      description: The parameters to use to customize the returned list of transactions.
+      required: false
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              page:
+                type: integer
+                minimum: 1
+              per_page:
+                type: integer
+                minimum: 1
+              search_term:
+                type: string
+              search_terms:
+                type: object
+              sort_by:
+                type: string
+              sort_dir:
+                type: string
+                enum: ["asc", "desc"]
+            example:
+              page: 1
+              per_page: 10
+              search_term: ""
+              seatch_terms: {}
+              sort_by: "field_name"
+              sort_dir: "asc"
+    UserTransactionsBody:
+      description: The parameters to use to customize the returned list of transactions.
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              provider_user_id:
+                type: string
+              address:
+                type: string
+              page:
+                type: integer
+                minimum: 1
+              per_page:
+                type: integer
+                minimum: 1
+              search_term:
+                type: string
+              search_terms:
+                type: object
+              sort_by:
+                type: string
+              sort_dir:
+                type: string
+                enum: ["asc", "desc"]
+            required:
+              - provider_user_id
+            example:
+              provider_user_id: "sample_provider_id"
+              address: "address_owned_by_user (optional)"
+              page: 1
+              per_page: 10
+              search_term: ""
+              seatch_terms: {}
+              sort_by: "field_name"
+              sort_dir: "asc"
+    CurrentUserTransactionsBody:
+      description: The parameters to use to customize the returned list of transactions.
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              address:
+                type: string
+              page:
+                type: integer
+                minimum: 1
+              per_page:
+                type: integer
+                minimum: 1
+              search_term:
+                type: string
+              search_terms:
+                type: object
+              sort_by:
+                type: string
+              sort_dir:
+                type: string
+                enum: ["asc", "desc"]
+            required:
+              - provider_user_id
+            example:
+              address: "address_owned_by_current_user (optional)"
+              page: 1
+              per_page: 10
+              search_term: ""
+              seatch_terms: {}
+              sort_by: "field_name"
+              sort_dir: "asc"
+    ######################################
+    #       TRANSFER REQUEST BODIES      #
+    ######################################
+    TransferBody:
+      description: The parameters for making a transfer from an address to another.
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              from_address:
+                type: string
+              to_address:
+                type: string
+              token_id:
+                type: string
+              amount:
+                type: integer
+              metadata:
+                type: object
+              encrypted_metadata:
+                type: object
+            required:
+              - from_address
+              - to_address
+              - token_id
+              - amount
+            example:
+              from_address: "81e75f46-ee14-4e4c-a1e5-cddcb26dce9c"
+              to_address: "4aa07691-2f99-4cb1-b36c-50763e2d2ba8"
+              token_id: "BTC:61822683-68d8-4af6-94d7-5ed4c34ecf1a"
+              amount: 100
+              metadata: {}
+              encrypted_metadata: {}
+    BalanceAdjustmentBody:
+      description: |
+        The parameters for crediting or debiting the balance of the specified user
+        by taking/giving back the given amount from/to the account_id.
+
+        If not specified, the account owning the minted token will be used as the source.
+        If no burn_balance_identifier is specified, the tokens won't be burned
+        and will instead be returned to the primary balance of the selected account.
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              provider_user_id:
+                type: string
+              token_id:
+                type: string
+              amount:
+                type: integer
+              account_id:
+                type: string
+              burn_balance_identifier:
+                type: string
+              metadata:
+                type: object
+              encrypted_metadata:
+                type: object
+            required:
+              - provider_user_id
+              - token_id
+              - amount
+            example:
+              provider_user_id: "wijf-fbancomw-dqwjudb"
+              token_id: "BTC:61822683-68d8-4af6-94d7-5ed4c34ecf1a"
+              amount: 100
+              account_id: "865ff420-899a-4eb3-8364-19edc5d51676"
+              burn_balance_identifier: "burn"
+              metadata: {}
+              encrypted_metadata: {}
+    CreateTransactionRequestBody:
+      description: Create a transaction request using the specified values. That request can then be consumed using a different endpoint by a different client to create a transaction from that request.
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              type:
+                type: string
+                enum:
+                  - send
+                  - receive
+              token_id:
+                type: string
+              amount:
+                type: integer
+              correlation_id:
+                type: string
+              address:
+                type: string
+            required:
+              - type
+              - token_id
+            example:
+              type: "send"
+              token_id: "PLAY:61822683-68d8-4af6-94d7-5ed4c34ecf1a"
+              amount: 100
+              correlation_id: "123"
+              address: "2ae52683-68d8-4af6-94d7-5ed4c34ecf1a"
+    GetTransactionRequestBody:
+      description: Get a transaction request using the specified ID.
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              id:
+                type: string
+            example:
+              id: "71822683-68d8-4af6-94d7-5ed4c34ecf1a"
+    ConsumeTransactionRequestBody:
+      description: Consume a transaction request using the specified values.
+      required: true
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            properties:
+              transaction_request_id:
+                type: string
+              correlation_id:
+                type: string
+              amount:
+                type: integer
+              token_id:
+                type: string
+              address:
+                type: string
+              metadata:
+                type: object
+              encrypted_metadata:
+                type: object
+            required:
+              - transaction_request_id
+            example:
+              transaction_request_id: "13324324-68d8-4af6-94d7-5ed4c34ecf1a"
+              correlation_id: "123"
+              token_id: "PLAY:61822683-68d8-4af6-94d7-5ed4c34ecf1a"
+              amount: 100
+              address: "2ae52683-68d8-4af6-94d7-5ed4c34ecf1a"
+              metadata: {}
+              encrypted_metadata: {}
+    
+              
+    ######################################
+    #       FRIEND REQUEST BODIES        #
+    ######################################
+    
+
+  ######################################
+  #           REQUEST HEADERS          #
+  ######################################
+  parameters:
+    IdempotencyToken:
+      in: header
+      name: Idempotency-Token
+      description: The idempotency token for the request
+      required: true
+      schema:
+        type: string
+
+  ######################################
+  #          SECURITY SCHEMES          #
+  ######################################
+  securitySchemes:
+    ServerAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: PLAYServer Base64(access_key:secret_key)
+    ClientAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: PLAYClient Base64(api_key:authentication_token)
+
+  responses:
+    ######################################
+    #          SESSION RESPONSES         #
+    ######################################
+    AuthenticationTokenResponse:
+      description: "Returns a single authentication token"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/AuthenticationTokenResponse'
+
+    ######################################
+    #            USER RESPONSES          #
+    ######################################
+    UserResponse:
+      description: "Returns a single user"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/UserResponseSchema'
+
+    ######################################
+    #        TRANSACTION RESPONSES       #
+    ######################################
+    TransactionResponse:
+      description: "Returns a single transaction"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/TransactionResponseSchema'
+    TransactionsResponse:
+      description: "Returns a list of transactions"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/TransactionsResponseSchema'
+
+    ######################################
+    #          BALANCE RESPONSES         #
+    ######################################
+    SingleAddressesResponse:
+      description: "Returns a list of single addresses"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/SingleAddressesResponse'
+    MultipleAddressesResponse:
+      description: "Returns a list of multiple addresses"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/MultipleAddressesResponse'
+    AddressesResponse:
+      description: "Returns a list of addresses"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/AddressesResponse'
+
+    ######################################
+    #       TRANSACTION RESPONSES        #
+    ######################################
+    # Schema for transaction request response body
+    TransactionRequestResponse:
+      description: Transaction request response
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/TransactionRequestResponse'
+    # Schema for transaction request response body
+    TransactionRequestConsumptionResponse:
+      description: Transaction request consumption response
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/TransactionRequestConsumptionResponse'
+
+    ######################################
+    #          SETTING RESPONSES         #
+    ######################################
+    SettingResponse:
+      description: "Returns a list of settings"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/SettingResponse'
+            
+    ######################################
+    #          FRIEND RESPONSES         #
+    ######################################
+    FriendResponse:
+      description: "Get a specific friend request"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/FriendResponse'
+
+    ######################################
+    #       MISCELLANEOUS RESPONSES      #
+    ######################################
+    EmptyResponse:
+      description: "Returns an empty response"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/BaseResponseSchema'
+    InternalServerError:
+      description: "Returns an internal server error"
+      content:
+        application/vnd.tokenplay.v1+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseSchema'
+            
+    ######################################
+    #       FRIEND RESPONSES             #
+    ######################################
+            
