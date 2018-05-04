@@ -173,6 +173,8 @@ defend, and hold each Contributor harmless for any liability
 incurred by, or claims asserted against, such Contributor by reason
 of your accepting any such warranty or additional liability.
 
+   Copyright [2018] [TokenPlay]
+
 END OF TERMS AND CONDITIONS
 
 Licensed under the Apache License, Version 2.0 (the "License");
