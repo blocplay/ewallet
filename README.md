@@ -4,7 +4,7 @@ The TokenPlay eWallet is provided as part of our OpenSource initiative at BlocPl
 
 Does this mean TokenPlay will be supporting OMG Tokens? Yes. The intention of TokenPlay is to fully support OMG tokens and ensure our technology works closely with the dev work the OmiseGO team is currently doing with Ethereum and Vitalik Buterin.
 
-If you would like more information on this system please contact [Vince McMullin](https://github.com/vamman).
+If you would like more information on this system please contact [Vince McMullin](https://github.com/vamman), CTO.
 
 # Disclaimer
 
