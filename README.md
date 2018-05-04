@@ -17,6 +17,62 @@ __Use at your own risk.__
 # Online Demo
 [eWallet Demo](http://ewallet.tokenplay.com/)
 
+Play around with the complete set of backend APIs in development for TokenPlay!
+
+  • eWallet API's Server endpoints
+  • eWallet API's Client endpoints
+  • Admin API's Client endpoints
+  • Admin API's User endpoints
+
+We use Swagger to test endpoints via an Elixir based webservice running Cowboy. This webservice runs on port 4000 but is provided to you via a reverse proxy on port 80. This environment is currently pointed to our development environment and is constantly undergoing development. If the service is down or not accessible please let us know.
+
+We will be putting a stable or staging build in place as development progresses for future proofing demos not impacted by development.
+
+Now on to the endpoints. The endpoints can be consumed by any client. Swagger provides the ability to engage and test the endpoint directly without having to venture to another browser based tool. However, if you do decide to do this I recommend studying what is needed and ensure base encoding of your api keys is proper.
+
+There is ClientAuth and ServerAuth. Anything that modifies the database uses ServerAuth. Anything that simply queries the database for data uses ClientAuth. Each require their own key to access the system.
+
+## Try eWallet API's Server endpoints
+
+- Browse to http://ewallet.tokenplay.com/api/docs
+- Click the Authorize button
+- Use the value below for ServerAuth:
+```
+    PLAYServer U0Y3aGk0NTRsOURINmpHM1loNDdWVEVKelpxcXlUb016ejA3eUtmUmtLODpTV2pRbzdwUmh4X0F4Q2gyYnBFYTdIUTVNWmI2UG1aRXUtamVPc0ViUHlv
+```
+- Try out Server endpoints such as /login, /user.create, /transfer, etc.
+
+## Try eWallet API's Client endpoints
+
+- Browse to http://ewallet.tokenplay.com/api/docs
+- Click the Authorize button
+- Use the value below for ClientAuth:
+```
+    PLAYClient a01pdDMzSjMwdVZaUkZ4ZkhpNVRVV052YmZtaDVoTHl5c3pCc016WngwNDpLVFVMeW9sS0x1b19kT1hQTWI0UHk0WUdKa3pXT2htNFcyUmJvVG4xTWZB
+```
+- Try out Client endpoints such as /me.get, /me.list_transactions, /logout, etc.
+
+## Try Admin API's Client endpoints
+
+- Browse to http://ewallet.tokenplay.com/admin/api/docs.ui
+- Click the Authorize button
+- Use the value below for ClientAuth:
+```
+    PLAYAdmin YTY5OTdkY2ItMDE2Yi00ZTM4LWJjN2UtMjRjMmI2MmI0M2VlOms5elZyTG5Obmp6dnV2Y1E0MmlxX1ctdHAyWV9kWm5XRHV6SUNrWHJnOVE=
+```
+- Try out Client endpoints such as /login, /password.reset, /password.update, etc.
+
+## Try Admin API's User endpoints
+
+- Browse to http://ewallet.tokenplay.com/admin/api/docs.ui
+- Click the Authorize button
+- Use the value below for UserAuth:
+```
+    PLAYAdmin YTY5OTdkY2ItMDE2Yi00ZTM4LWJjN2UtMjRjMmI2MmI0M2VlOms5elZyTG5Obmp6dnV2Y1E0MmlxX1ctdHAyWV9kWm5XRHV6SUNrWHJnOVE6NjVlYzM4OGMtMzMyMC00OTkxLWE1NTctNzI5YWM4NjhjYjBmOmpZZnlBODVONzhsYUJ1dTB2V2lFenp0S3Z5MXlwaHNqUWJqdnByc1pwTVk=
+```
+- Try out User endpoints such as /account.create, /account.assign_user, /access_key.create, etc.
+
+
 # TokenPlay Architecture
 ![TokenPlay Architecture](http://app.blocplays.com/tokenplay_arch.png)
 
