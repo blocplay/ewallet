@@ -47,20 +47,20 @@ We use the Laptop script (see: https://www.moncefbelyamani.com/how-to-install-xc
 bash <(curl -s https://raw.githubusercontent.com/monfresh/laptop/master/laptop)
 ```
 
-Bundler for managing Ruby gems
-chruby for managing Ruby versions
-Flux for adjusting your Mac's display color so you can sleep better
-GitHub Desktop for setting up your SSH keys automatically
-Heroku Toolbelt for deploying and managing Heroku apps
-Homebrew for managing operating system libraries
-Homebrew Cask for quickly installing Mac apps from the command line
-Homebrew Services so you can easily stop, start, and restart services
-hub for interacting with the GitHub API
-PhantomJS for headless website testing
-Postgres for storing relational data
-ruby-install for installing different versions of Ruby
-Sublime Text 3 for coding all the things
-Zsh as your shell (if you opt in)
+- Bundler for managing Ruby gems
+- chruby for managing Ruby versions
+- Flux for adjusting your Mac's display color so you can sleep better
+- GitHub Desktop for setting up your SSH keys automatically
+- Heroku Toolbelt for deploying and managing Heroku apps
+- Homebrew for managing operating system libraries
+- Homebrew Cask for quickly installing Mac apps from the command line
+- Homebrew Services so you can easily stop, start, and restart services
+- hub for interacting with the GitHub API
+- PhantomJS for headless website testing
+- Postgres for storing relational data
+- ruby-install for installing different versions of Ruby
+- Sublime Text 3 for coding all the things
+- Zsh as your shell (if you opt in)
 
 
 ## Install depends
